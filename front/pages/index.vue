@@ -6,6 +6,9 @@
     <v-btn @click="clickBtn">
       Click!
     </v-btn>
+    <v-btn @click="login">
+      Login
+    </v-btn>
   </div>
 </template>
 
@@ -17,6 +20,12 @@ export default defineComponent({
   setup() {
     const title = ref('Test')
 
+    const login = () => {
+      location.href = 'http://127.0.0.1:3000/api/v1/auth/twitter'
+      // const response = await $axios.get('/api/v1/auth/twitter')
+      // console.log(response)
+    }
+
     const clickBtn = async () => {
       const response = await $axios.get('/api/v1/posts')
       title.value = response.data.posts[0].name
@@ -24,7 +33,7 @@ export default defineComponent({
     }
     
     return {
-      title, clickBtn
+      title, clickBtn, login
     }
   }
 })
