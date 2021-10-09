@@ -8,7 +8,7 @@ class User < ActiveRecord::Base
           :validatable,
           :trackable,
           :omniauthable,
-          omniauth_providers: [:twitter]
+          omniauth_providers: [:twitter, :google_oauth2]
 
   include DeviseTokenAuth::Concerns::User
 end

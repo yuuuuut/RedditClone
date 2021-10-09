@@ -9,6 +9,9 @@
     <v-btn @click="login">
       Login
     </v-btn>
+    <v-btn @click="glogin">
+      GoogleLogin
+    </v-btn>
   </div>
 </template>
 
@@ -26,6 +29,12 @@ export default defineComponent({
       // console.log(response)
     }
 
+    const glogin = () => {
+      location.href = 'http://127.0.0.1:3000/api/v1/auth/google_oauth2'
+      // const response = await $axios.get('/api/v1/auth/twitter')
+      // console.log(response)
+    }
+
     const clickBtn = async () => {
       const response = await $axios.get('/posts')
       title.value = response.data.posts[0].name
@@ -33,7 +42,7 @@ export default defineComponent({
     }
     
     return {
-      title, clickBtn, login
+      title, clickBtn, login, glogin
     }
   }
 })
