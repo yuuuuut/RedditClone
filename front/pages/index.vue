@@ -27,7 +27,7 @@ export default defineComponent({
     }
 
     const clickBtn = async () => {
-      const response = await $axios.get('/api/v1/posts')
+      const response = await $axios.get('/posts')
       title.value = response.data.posts[0].name
       console.log(response)
     }

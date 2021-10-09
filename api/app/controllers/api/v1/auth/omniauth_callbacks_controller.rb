@@ -25,6 +25,6 @@ class Api::V1::Auth::OmniauthCallbacksController < DeviseTokenAuth::OmniauthCall
     client = response.headers['client']
     uid = response.headers['uid']
   
-    redirect_to "http://localhost:3000/signin?access_token=#{access_token}&client=#{client}&uid=#{uid}"
+    redirect_to "http://localhost:8080/auth/callback?access_token=#{access_token}&client=#{client}&uid=#{uid}"
   end
 end
