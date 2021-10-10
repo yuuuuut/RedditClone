@@ -5,12 +5,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, onMounted, useRoute } from '@nuxtjs/composition-api'
+import { defineComponent, ref, onMounted, useRoute, useRouter } from '@nuxtjs/composition-api'
+import { userStore } from '../../plugins/store-accessor'
 import { $axios } from '../../utils/api'
 
 export default defineComponent({
   setup() {
-    const router = useRoute()
+    const router = useRouter()
+    const route = useRoute()
 
     const title = ref('Test')
 
@@ -18,13 +20,20 @@ export default defineComponent({
       callback()
     })
 
-    const callback = async () => {
-      localStorage.setItem('access-token', router.value.query.access_token as string)
-      localStorage.setItem('client', router.value.query.client as string)
-      localStorage.setItem('uid', router.value.query.uid as string)
+    const callback = () => {
+      localStorage.setItem('access-token', route.value.query.access_token as string)
+      localStorage.setItem('client', route.value.query.client as string)
+      localStorage.setItem('uid', route.value.query.uid as string)
 
-      const response = await $axios.get('/posts')
-      console.log(response)
+      $axios.get('/account/me').then(response => {
+        if (response.status !== 200) throw new Error('error')
+        const currentUser = response.data.current_user
+        userStore.setUser(currentUser)
+      }).catch((e) => {
+        console.error(e)
+      }).finally(() => {
+        router.push('/')
+      })
     }
 
 

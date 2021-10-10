@@ -2002,11 +2002,6 @@
   resolved "https://registry.npmjs.org/@vue/shared/-/shared-3.2.19.tgz"
   integrity sha512-Knqhx7WieLdVgwCAZgTVrDCXZ50uItuecLh9JdLC8O+a5ayaSyIQYveUK3hCRNC7ws5zalHmZwfdLMGaS8r4Ew==
 
-"@vueuse/core@^3.0.35":
-  version "3.0.35"
-  resolved "https://registry.yarnpkg.com/@vueuse/core/-/core-3.0.35.tgz#0d612a4f242b96e355948d41e205afd81c5bcc24"
-  integrity sha512-aZe0jtXkn8TuWN9n5FgXA4+ZLwVbRHv8plyT+yJwf0yn/LuLN2U7mIp/OxQP1F44KHa7aGfNKxFXMG1RjPZimw==
-
 "@webassemblyjs/ast@1.9.0":
   version "1.9.0"
   resolved "https://registry.npmjs.org/@webassemblyjs/ast/-/ast-1.9.0.tgz"
@@ -9399,6 +9394,11 @@ vuetify@^2.5.3, vuetify@^2.5.5:
   version "2.5.9"
   resolved "https://registry.npmjs.org/vuetify/-/vuetify-2.5.9.tgz"
   integrity sha512-rQaa8MDxnv449l+XCmFCN9bRQpCUT8mewW6yIc6DHiXh9bAneD6jXF023doK0KkcS8+vRSrtgBESsLYA6te+dg==
+
+vuex-module-decorators@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/vuex-module-decorators/-/vuex-module-decorators-1.0.1.tgz#d34dafb5428a3636f1c26d3d014c15fc9659ccd0"
+  integrity sha512-FLWZsXV5XAtl/bcKUyQFpnSBtpc3wK/7zSdy9oKbyp71mZd4ut5y2zSd219wWW9OG7WUOlVwac4rXFFDVnq7ug==
 
 vuex@^3.6.2:
   version "3.6.2"

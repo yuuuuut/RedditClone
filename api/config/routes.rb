@@ -7,6 +7,10 @@ Rails.application.routes.draw do
         omniauth_callbacks: 'api/v1/auth/omniauth_callbacks'
       }
 
+      namespace :account do
+        get '/me', action: :me
+      end
+
       resources :posts, only: [:index]
     end
   end
