@@ -6,8 +6,8 @@
 
 <script lang="ts">
 import { defineComponent, ref, onMounted, useRoute, useRouter } from '@nuxtjs/composition-api'
-import { userStore } from '../../plugins/store-accessor'
-import { $axios } from '../../utils/api'
+import { userStore } from '~/plugins/store-accessor'
+import { $axios } from '~/utils/api'
 
 export default defineComponent({
   setup() {

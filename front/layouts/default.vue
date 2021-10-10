@@ -10,8 +10,8 @@
 
 <script lang="ts">
 import { defineComponent } from '@nuxtjs/composition-api'
-import { userStore } from '../plugins/store-accessor'
 import { $axios } from '../utils/api'
+import { userStore } from '@/plugins/store-accessor'
 
 export default defineComponent({
   setup() {

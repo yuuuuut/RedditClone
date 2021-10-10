@@ -1,5 +1,5 @@
 import { Store } from 'vuex'
-import { initializeStores } from '../plugins/store-accessor'
+import { initializeStores } from '~/plugins/store-accessor'
 
 export * from '../plugins/store-accessor'
 

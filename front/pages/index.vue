@@ -17,8 +17,8 @@
 
 <script lang="ts">
 import { defineComponent, ref } from '@vue/composition-api'
-import { userStore } from '../plugins/store-accessor'
-import { $axios } from '../utils/api'
+import { userStore } from '~/plugins/store-accessor'
+import { $axios } from '~/utils/api'
 
 type Providers = "Google" | "Twitter"
 
