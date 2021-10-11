@@ -1,4 +1,5 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators'
+import { useContext } from '@nuxtjs/composition-api'
 import { $axios } from '~/utils/api'
 
 /**
@@ -12,10 +13,10 @@ export interface UserType {
 
 @Module({ stateFactory: true, namespaced: true, name: 'user' })
 export default class User extends VuexModule {
-  public user: UserType | null = null
+  private user: UserType | null = null
 
   @Mutation
-  setUser (user: UserType) {
+  setUser (user: UserType | null) {
     this.user = user
   }
 
@@ -24,13 +25,16 @@ export default class User extends VuexModule {
   }
 
   @Action({ rawError: true })
-  public getCurrentUser () {
-    $axios.get('/account/me').then(response => {
-      if (response.status !== 200) throw new Error('error')
-      const currentUser = response.data.current_user
-      this.setUser(currentUser)
-    }).catch((e) => {
-      console.error(e)
-    })
+  public async getCurrentUser () {
+    const ctx = useContext()
+    const response = await $axios.get('/account/me')
+    if (response.status !== 200) {
+      this.setUser(null)
+      ctx.error({ statusCode: response.status })
+      return
+    }
+
+    const currentUser = response.data.current_user
+    this.setUser(currentUser)
   }
 }
