@@ -10,20 +10,13 @@
 
 <script lang="ts">
 import { defineComponent } from '@nuxtjs/composition-api'
-import { $axios } from '../utils/api'
 import { userStore } from '@/plugins/store-accessor'
 
 export default defineComponent({
   setup() {
 
     const setCurrentUser = () => {
-      $axios.get('/account/me').then(response => {
-        if (response.status !== 200) throw new Error('error')
-        const currentUser = response.data.current_user
-        userStore.setUser(currentUser)
-      }).catch((e) => {
-        console.error(e)
-      })
+      userStore.getCurrentUser()
     }
 
     setCurrentUser()
