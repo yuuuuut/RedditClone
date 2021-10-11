@@ -2,18 +2,19 @@
   <v-app>
     <v-app-bar color="white" height="48" app>
       <v-toolbar-title>Reddit Clone</v-toolbar-title>
-      <v-spacer></v-spacer>
       <v-text-field
         hide-details
         outlined
         dense
         prepend-inner-icon="mdi-magnify"
         placeholder="Search Reddit"
+        class="search-input"
       />
-      <v-spacer></v-spacer>
       <div class="mr-8">
         <v-btn
           rounded
+          outlined
+          color="primary"
           width="120"
           class="mr-5"
         >
@@ -88,9 +89,18 @@ export default defineComponent({
   box-shadow: initial;
 }
 
+.search-input {
+  margin-right: 100px;
+  margin-left: 150px;
+  max-width: 650px;
+}
+
+::v-deep .v-input__icon--prepend-inner .v-icon { 
+  padding-bottom: 5px;
+}
+
 ::v-deep .v-text-field .v-input__control .v-input__slot {
   min-height: 34px !important;
-  max-width: 656px;
 }
 
 @media (min-width: 1264px) {

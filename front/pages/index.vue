@@ -1,11 +1,14 @@
 <template>
   <div>
-    <p>
-      {{ title }}
-    </p>
-    <v-btn @click="clickBtn">
-      Click!
-    </v-btn>
+    <TrendingToday />
+    <v-row class="grey lighten-3" no-gutters>
+      <v-col cols="8" style="background-color: #FFCDD2">
+        column 1
+      </v-col>
+      <v-col cols="4" style="background-color: #FFCDD2">
+        column 1
+      </v-col>
+    </v-row>
     <v-btn @click="oAuthLogin('Twitter')">
       TwitterLogin
     </v-btn>
@@ -16,16 +19,18 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from '@vue/composition-api'
-import { userStore } from '~/plugins/store-accessor'
-import { $axios } from '~/utils/api'
+import { defineComponent } from '@vue/composition-api'
+import TrendingToday from '~/components/indexes/TrendingToday.vue'
 
-type Providers = "Google" | "Twitter"
+import { userStore } from '~/plugins/store-accessor'
+import { Providers } from '~/store/user'
 
 export default defineComponent({
+  components: {
+    TrendingToday
+  },
   setup() {
     console.log(userStore)
-    const title = ref('Test')
 
     const oAuthLogin = (provider: Providers) => {
       switch (provider) {
@@ -37,15 +42,9 @@ export default defineComponent({
           break
       }
     }
-
-    const clickBtn = async () => {
-      const response = await $axios.get('/posts')
-      title.value = response.data.posts[0].name
-      console.log(response)
-    }
     
     return {
-      title, clickBtn, oAuthLogin
+      oAuthLogin
     }
   }
 })

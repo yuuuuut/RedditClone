@@ -11,6 +11,8 @@ export interface UserType {
   email: string
 }
 
+export type Providers = "Google" | "Twitter"
+
 @Module({ stateFactory: true, namespaced: true, name: 'user' })
 export default class User extends VuexModule {
   private user: UserType | null = null
