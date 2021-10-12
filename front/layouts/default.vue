@@ -45,6 +45,7 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
+      <v-spacer></v-spacer>
       <div class="mr-8">
         <template v-if="!isLogin">
           <v-btn
@@ -69,7 +70,8 @@
           </v-btn>
         </template>
         <template v-if="isLogin">
-          <v-icon>mdi-notification</v-icon>
+          <v-icon class="mt-1 mr-4" color="black">mdi-bell-outline</v-icon>
+          <v-icon class="mt-1 header-icon" color="black">mdi-plus</v-icon>
         </template>
         <v-menu
           offset-y
@@ -82,9 +84,12 @@
               v-on="on"
             >
               <v-icon v-if="!isLogin" color="black">mdi-account-outline</v-icon>
-              <v-avatar v-if="isLogin" size="30">
-                <img :src="currentUser.image" />
-              </v-avatar>
+              <div v-if="isLogin" class="current-user__header">
+                <v-avatar size="30">
+                  <img :src="currentUser.image" />
+                </v-avatar>
+                <div class="current-user__name">{{ currentUser.name }}</div>
+              </div>
               <v-icon color="black">mdi-chevron-down</v-icon>
             </v-btn>
           </template>
@@ -212,6 +217,22 @@ export default defineComponent({
 
 ::v-deep .v-text-field .v-input__control .v-input__slot {
   min-height: 34px !important;
+}
+
+.header-icon {
+  margin-right: 70px;
+}
+
+.current-user__header {
+  min-width: 100px;
+  display: flex;
+
+  .current-user__name {
+    color: black;
+    margin-top: 5px;
+    margin-left: 7px;
+    font-size: 12px;
+  }
 }
 
 @media (min-width: 1264px) {
