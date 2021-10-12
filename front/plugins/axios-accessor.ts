@@ -18,6 +18,7 @@ export const accessor: Plugin = ({ $axios, error }): void => {
     const response = axiosError.response
     const status = response?.status ?? 500
 
+    if (response?.config.url === '/account/me') return
     if ((axiosError.config as CustomRequestConfig)?.dontDisplayErrorPage) return
 
     error({ statusCode: status })

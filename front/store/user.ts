@@ -1,5 +1,4 @@
 import { Module, VuexModule, Mutation, Action } from 'vuex-module-decorators'
-import { useContext } from '@nuxtjs/composition-api'
 import { $axios } from '~/utils/api'
 
 /**
@@ -28,11 +27,9 @@ export default class User extends VuexModule {
 
   @Action({ rawError: true })
   public async getCurrentUser () {
-    const ctx = useContext()
     const response = await $axios.get('/account/me')
     if (response.status !== 200) {
       this.setUser(null)
-      ctx.error({ statusCode: response.status })
       return
     }
 

@@ -10,28 +10,69 @@
         placeholder="Search Reddit"
         class="search-input"
       />
+      <v-dialog
+        v-model="dialog"
+        width="500"
+      >
+        <v-card>
+          <v-card-title class="d-flex justify-space-between">
+            <div>
+              {{ dialogTitle }}
+            </div>
+            <v-icon @click="dialog = false">mdi-close</v-icon>
+          </v-card-title>
+          <v-card-actions class="d-flex flex-column">
+            <v-btn
+              outlined
+              color="primary"
+              min-width="300"
+              class="mb-3"
+              @click="oAuthLogin('Google')"
+            >
+              <img width="20" height="20" src="/image/google_icon.svg" />
+              <div class="pl-4">CONTINUE WITH GOOGLE</div>
+            </v-btn>
+            <v-btn
+              outlined
+              color="primary"
+              min-width="300"
+              class="mb-3"
+              @click="oAuthLogin('Twitter')"
+            >
+              <img width="20" height="20" src="/image/twitter_icon.svg" />
+              <div class="pl-4">CONTINUE WITH TWITTER</div>
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
       <div class="mr-8">
-        <v-btn
-          rounded
-          outlined
-          color="primary"
-          width="120"
-          class="mr-5"
-        >
-          Log In
-        </v-btn>
-        <v-btn
-          rounded
-          color="primary"
-          dark
-          width="120"
-          class="mr-5"
-        >
-          Sign Up
-        </v-btn>
+        <template v-if="!isLogin">
+          <v-btn
+            rounded
+            outlined
+            color="primary"
+            width="120"
+            class="mr-5"
+            @click="openDialog('LOGIN')"
+          >
+            Log In
+          </v-btn>
+          <v-btn
+            rounded
+            color="primary"
+            dark
+            width="120"
+            class="mr-5"
+            @click="openDialog('SIGNUP')"
+          >
+            Sign Up
+          </v-btn>
+        </template>
+        <template v-if="isLogin">
+          <v-icon>mdi-notification</v-icon>
+        </template>
         <v-menu
-          bottom
-          left
+          offset-y
         >
           <template #activator="{ on, attrs }">
             <v-btn
@@ -40,18 +81,47 @@
               v-bind="attrs"
               v-on="on"
             >
-              <v-icon color="black">mdi-account-outline</v-icon>
+              <v-icon v-if="!isLogin" color="black">mdi-account-outline</v-icon>
+              <v-avatar v-if="isLogin" size="30">
+                <img :src="currentUser.image" />
+              </v-avatar>
               <v-icon color="black">mdi-chevron-down</v-icon>
             </v-btn>
           </template>
-
           <v-list>
-            <!-- <v-list-item
-              v-for="(item, i) in items"
-              :key="i"
-            >
-              <v-list-item-title>{{ item.title }}</v-list-item-title>
-            </v-list-item> -->
+            <v-list-item v-if="isLogin">
+              <v-list-item-icon>
+                <v-icon>mdi-account</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title>My Page</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item>
+              <v-list-item-icon>
+                <v-icon>mdi-help-circle</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title>Help</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+            <v-divider />
+            <v-list-item v-if="!isLogin" @click="openDialog('LOGIN')">
+              <v-list-item-icon>
+                <v-icon>mdi-login</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title>Login / Sign up</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
+            <v-list-item v-if="isLogin">
+              <v-list-item-icon>
+                <v-icon>mdi-logout</v-icon>
+              </v-list-item-icon>
+              <v-list-item-content>
+                <v-list-item-title>Logout</v-list-item-title>
+              </v-list-item-content>
+            </v-list-item>
           </v-list>
         </v-menu>
       </div>
@@ -65,17 +135,54 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@nuxtjs/composition-api'
+import { computed, defineComponent, ref } from '@nuxtjs/composition-api'
 import { userStore } from '@/plugins/store-accessor'
+import { Providers } from '~/store/user'
+
+type dialogType = "LOGIN" | "SIGNUP"
 
 export default defineComponent({
   setup() {
+    const dialog = ref(false)
+    const dialogTitle = ref<string>("")
+
+    const isLogin = computed(() => {
+      return !!userStore.currentUser
+    })
+    const currentUser = computed(() => {
+      return userStore.currentUser
+    })
+
+    const oAuthLogin = (provider: Providers) => {
+      switch (provider) {
+        case "Google":
+          location.href = 'http://127.0.0.1:3000/api/v1/auth/google_oauth2'
+          break
+        case "Twitter":
+          location.href = 'http://127.0.0.1:3000/api/v1/auth/twitter'
+          break
+      }
+    }
+
+    const openDialog = (type: dialogType) => {
+      dialogTitle.value = type === "LOGIN" ? "Login" : "Signup"
+      dialog.value = true
+    }
 
     const setCurrentUser = () => {
       userStore.getCurrentUser()
     }
 
     setCurrentUser()
+
+    return {
+      dialog,
+      dialogTitle,
+      isLogin,
+      currentUser,
+      openDialog,
+      oAuthLogin
+    }
   }
 })
 </script>
@@ -83,6 +190,10 @@ export default defineComponent({
 <style lang="scss" scoped>
 .main {
   background-color: #dae0e6;
+}
+
+.v-btn.v-btn + .v-btn {
+  margin-left: 0 !important;
 }
 
 .v-sheet.v-app-bar.v-toolbar:not(.v-sheet--outlined) {
