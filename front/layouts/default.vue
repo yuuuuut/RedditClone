@@ -1,7 +1,11 @@
 <template>
   <v-app>
     <v-app-bar color="white" height="48" app>
-      <v-toolbar-title>Reddit Clone</v-toolbar-title>
+      <v-toolbar-title>
+        <NuxtLink to="/">
+          Reddit Clone
+        </NuxtLink>
+      </v-toolbar-title>
       <v-text-field
         hide-details
         outlined
@@ -71,7 +75,9 @@
         </template>
         <template v-if="isLogin">
           <v-icon class="mt-1 mr-4" color="black">mdi-bell-outline</v-icon>
-          <v-icon class="mt-1 header-icon" color="black">mdi-plus</v-icon>
+          <NuxtLink to="/submit">
+            <v-icon v-bind="attrs" class="mt-1 header-icon" color="black" v-on="on">mdi-plus</v-icon>
+          </NuxtLink>
         </template>
         <v-menu
           offset-y
@@ -202,6 +208,11 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
+a {
+  text-decoration: none;
+  color: #000 !important;
+}
+
 .main {
   background-color: #dae0e6;
 }
