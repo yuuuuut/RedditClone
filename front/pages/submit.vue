@@ -27,7 +27,7 @@
           >
             <v-card flat>
               <v-text-field
-                v-model="title"
+                v-model="post.title"
                 placeholder="Title"
                 hide-details="auto"
                 outlined
@@ -35,6 +35,7 @@
               />
               <div v-if="tab === 'POST'">
                 <v-textarea
+                  v-model="post.text"
                   placeholder="Text(optional)"
                   hide-details="auto"
                   outlined
@@ -42,6 +43,7 @@
               </div>
               <div v-if="tab === 'LINK'">
                 <v-text-field
+                  v-model="post.url"
                   placeholder="Url"
                   hide-details="auto"
                   height="50"
@@ -53,13 +55,13 @@
         </v-tabs-items>
         <div class="d-flex pa-3">
           <v-chip
-            :outlined="!spoiler"
-            :color="spoiler ? 'black' : ''"
-            :text-color="spoiler ? 'white': ''"
+            :outlined="!post.spoiler"
+            :color="post.spoiler ? 'black' : ''"
+            :text-color="post.spoiler ? 'white': ''"
             class="mr-2"
-            @click="spoiler = !spoiler"
+            @click="post.spoiler = !post.spoiler"
           >
-            <v-icon v-if="!spoiler" left>
+            <v-icon v-if="!post.spoiler" left>
               mdi-plus
             </v-icon>
             <v-icon v-else left>
@@ -68,12 +70,12 @@
             spoiler
           </v-chip>
           <v-chip
-            :outlined="!nsfw"
-            :color="nsfw ? 'black' : ''"
-            :text-color="nsfw ? 'white': ''"
-            @click="nsfw = !nsfw"
+            :outlined="!post.nsfw"
+            :color="post.nsfw ? 'black' : ''"
+            :text-color="post.nsfw ? 'white': ''"
+            @click="post.nsfw = !post.nsfw"
           >
-            <v-icon v-if="!nsfw" left>
+            <v-icon v-if="!post.nsfw" left>
               mdi-plus
             </v-icon>
             <v-icon v-else left>
@@ -87,7 +89,7 @@
           <v-chip color="primary" class="mr-3">
             SAVE DRAFT
           </v-chip>
-          <v-chip color="black" text-color="white" :disabled="!title.length">
+          <v-chip color="black" text-color="white" :disabled="!post.title.length" @click="createPost">
             POST
           </v-chip>
         </div>
@@ -98,21 +100,31 @@
 
 <script lang="ts">
 import { defineComponent, ref } from "@nuxtjs/composition-api"
+import { $axios } from "~/utils/api"
 
 export default defineComponent({
   setup() {
     const tab = ref(null)
     const tabs = ref(['POST', 'IMAGE', 'LINK'])
-    const title = ref('')
-    const spoiler = ref(false)
-    const nsfw = ref(false)
+    const post = ref({
+      title: '',
+      text: '',
+      url: '',
+      spoiler: false,
+      nsfw: false,
+      status: "public"
+    })
+
+    const createPost = async () => {
+      const response = await $axios.post('/posts', { post: post.value })
+      console.log(response)
+    }
 
     return {
       tab,
       tabs,
-      title,
-      spoiler,
-      nsfw
+      post,
+      createPost
     }
   }
 })

@@ -11,7 +11,7 @@ Rails.application.routes.draw do
         get '/me', action: :me
       end
 
-      resources :posts, only: [:index]
+      resources :posts
     end
   end
 end
