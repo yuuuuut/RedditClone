@@ -119,7 +119,7 @@
                 <v-list-item-title>Login / Sign up</v-list-item-title>
               </v-list-item-content>
             </v-list-item>
-            <v-list-item v-if="isLogin">
+            <v-list-item v-if="isLogin" @click="logout">
               <v-list-item-icon>
                 <v-icon>mdi-logout</v-icon>
               </v-list-item-icon>
@@ -140,7 +140,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref } from '@nuxtjs/composition-api'
+import { computed, defineComponent, ref, useRouter } from '@nuxtjs/composition-api'
 import { userStore } from '@/plugins/store-accessor'
 import { Providers } from '~/store/user'
 
@@ -148,6 +148,8 @@ type dialogType = "LOGIN" | "SIGNUP"
 
 export default defineComponent({
   setup() {
+    const router = useRouter()
+
     const dialog = ref(false)
     const dialogTitle = ref<string>("")
 
@@ -178,6 +180,12 @@ export default defineComponent({
       userStore.getCurrentUser()
     }
 
+    const logout = async () => {
+      const success = await userStore.logout()
+      if (!success) return
+      router.push('/')
+    }
+
     setCurrentUser()
 
     return {
@@ -186,7 +194,8 @@ export default defineComponent({
       isLogin,
       currentUser,
       openDialog,
-      oAuthLogin
+      oAuthLogin,
+      logout
     }
   }
 })

@@ -36,4 +36,19 @@ export default class User extends VuexModule {
     const currentUser = response.data.current_user
     this.setUser(currentUser)
   }
+
+  @Action({ rawError: true })
+  public async logout () {
+    const response = await $axios.delete('/auth/sign_out')
+
+    if (!response.data.success) {
+      return false
+    }
+
+    this.setUser(null)
+    localStorage.removeItem('access-token')
+    localStorage.removeItem('client')
+    localStorage.removeItem('uid')
+    return true
+  }
 }
