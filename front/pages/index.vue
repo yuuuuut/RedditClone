@@ -10,9 +10,9 @@
 
 <script lang="ts">
 import { defineComponent } from '@vue/composition-api'
-import TopCommunities from '~/components/indexes/TopCommunities.vue'
-import TrendingToday from '~/components/indexes/TrendingToday.vue'
-import PopularPosts from '~/components/indexes/PopularPosts.vue'
+import TopCommunities from '~/components/index/TopCommunities.vue'
+import TrendingToday from '~/components/index/TrendingToday.vue'
+import PopularPosts from '~/components/index/PopularPosts.vue'
 
 import { userStore } from '~/plugins/store-accessor'
 

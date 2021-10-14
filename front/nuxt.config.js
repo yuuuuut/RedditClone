@@ -31,7 +31,8 @@ export default {
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
-    '@/plugins/axios-accessor'
+    '@/plugins/axios-accessor',
+    '@/plugins/firebase.ts'
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
@@ -41,7 +42,8 @@ export default {
   buildModules: [
     '@nuxt/typescript-build',
     '@nuxtjs/composition-api/module',
-    '@nuxtjs/vuetify'
+    '@nuxtjs/vuetify',
+    '@nuxtjs/dotenv'
   ],
 
   // Modules: https://go.nuxtjs.dev/config-modules
