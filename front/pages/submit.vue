@@ -167,7 +167,7 @@ export default defineComponent({
     }
 
     const createPost = async () => {
-      const response = await $axios.post('/posts', { post: post.value })
+      const response = await $axios.post('/posts', { post: post.value, post_image: postImage.value })
       console.log(response)
     }
 
