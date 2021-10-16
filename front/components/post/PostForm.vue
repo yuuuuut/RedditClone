@@ -1,7 +1,10 @@
 <template>
   <div class="form">
     <div class="d-flex justify-space-between">
-      <h3 class="mb-3">Create a post</h3>
+      <h3 class="mb-3">
+        <div v-if="isDraftQuery.isQuery">Update a post</div>
+        <div v-else>Create a post</div>
+      </h3>
       <v-dialog
         v-model="draftDialog"
         width="500"
@@ -28,7 +31,7 @@
             Drafts <span class="draft-post__length-text">{{ draftPosts.length }}/10</span>
           </div>
           <v-divider />
-          <v-card-text style="max-height: 250px;">
+          <v-card-text class="draft-post__item">
             <div v-for="post in draftPosts" :key="post.id">
               <div class="py-1 px-2" @click="selectDraftPosr(post.id)">
                 <div>{{ post.title }}</div>
@@ -304,9 +307,15 @@ export default defineComponent({
       isDraftPostsLoad.value = false
     }
 
-    // const selectDraftPosr = async (postId: string) => {
-    //   const response = await $axios.get(`/account/posts/${postId}`)
-    // }
+    const selectDraftPosr = async (postId: string) => {
+      const response = await $axios.get(`/account/posts/${postId}`)
+      if (!response.data) return
+      post.value = response.data.post
+      postImage.value = response.data.post_image
+      draftDialog.value = false
+      router.push(`/u/${response.data.user.name}/submit?draft=${response.data.post.id}`)
+      console.log(response)
+    }
 
     const clickSelectUserItem = () => {
       if (!currentUser.value) return
@@ -334,6 +343,7 @@ export default defineComponent({
       post.value.status = 'draft'
       const response = await $axios.post('/posts', { post: post.value, post_image: postImage.value })
       const resPost = response.data.post
+      draftPosts.value.push(resPost)
       router.push(`/u/${resPost.user.name}/submit?draft=${resPost.id}`)
     }
 
@@ -373,6 +383,7 @@ export default defineComponent({
       currentUser,
       clickSelectUserItem,
       getDraftPosts,
+      selectDraftPosr,
       imageMouseOver,
       imageMouseLeave,
       btnclick,
@@ -435,6 +446,11 @@ export default defineComponent({
 
 .draft-content {
   max-height: 200px;
+}
+
+.draft-post__item {
+  max-height: 250px;
+  cursor: pointer;
 }
 
 .draft-post__length-text {

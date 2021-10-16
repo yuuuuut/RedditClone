@@ -7,4 +7,8 @@ class Api::V1::Account::PostsController < Api::V1::ApplicationController
       @posts = Post.where(user: current_user, status: param).limit(10)
     end
   end
+
+  def show
+    @post = Post.find_by(id: params[:id])
+  end
 end
