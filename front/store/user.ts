@@ -6,9 +6,11 @@ import { $axios } from '~/utils/api'
  */
 export interface UserType {
   uid: string
+  uname: string
   image: string
   email: string
   name: string
+  isFirstLogin: boolean
 }
 
 export type Providers = "Google" | "Twitter"

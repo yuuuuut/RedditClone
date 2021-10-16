@@ -94,7 +94,7 @@
                 <v-avatar size="30">
                   <img :src="currentUser.image" />
                 </v-avatar>
-                <div class="current-user__name">{{ currentUser.name }}</div>
+                <div class="current-user__name">{{ currentUser.uname }}</div>
               </div>
               <v-icon color="black">mdi-chevron-down</v-icon>
             </v-btn>
@@ -142,13 +142,54 @@
         <Nuxt />
       </v-container>
     </v-main>
+    <v-dialog
+      v-if="currentUser"
+      v-model="currentUser.isFirstLogin"
+      persistent
+      max-width="500"
+    >
+      <v-card>
+        <v-card-title class="text-h5">
+          Please create an ID
+        </v-card-title>
+        <div class="pb-7">
+          <v-row no-gutters>
+            <v-col cols="12" class="px-6 mb-1">
+              <v-text-field
+                v-model="uname"
+                outlined
+                width="100%"
+                hide-details="auto"
+                prefix="Own_"
+                counter
+                maxlength="10"
+                :rules="unameRules"
+              />
+            </v-col>
+            <v-col cols="12" class="px-6 mb-5">
+              <div>You cannot create an ID that already exists.</div>
+            </v-col>
+            <v-col cols="12" class="px-6">
+              <v-btn
+                color="primary"
+                width="100%"
+                @click="unameCreate"
+              >
+                Create
+              </v-btn>
+            </v-col>
+          </v-row>
+        </div>
+      </v-card>
+    </v-dialog>
   </v-app>
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref, useRouter } from '@nuxtjs/composition-api'
+import { computed, defineComponent,ref, useRouter } from '@nuxtjs/composition-api'
 import { userStore } from '@/plugins/store-accessor'
 import { Providers } from '~/store/user'
+import { $axios } from '~/utils/api'
 
 type dialogType = "LOGIN" | "SIGNUP"
 
@@ -158,6 +199,13 @@ export default defineComponent({
 
     const dialog = ref(false)
     const dialogTitle = ref<string>("")
+    const uname = ref('')
+    const unameRules = ref([
+      (v: string) => {
+        const pattern = /^[0-9a-zA-Z]*$/
+        return pattern.test(v) || 'Please enter only alphanumeric characters'
+      }
+    ])
 
     const isLogin = computed(() => {
       return !!userStore.currentUser
@@ -165,6 +213,16 @@ export default defineComponent({
     const currentUser = computed(() => {
       return userStore.currentUser
     })
+
+    const unameCreate = async () => {
+      try {
+        const response = await $axios.patch('/account/users/update_uname', { uname: uname.value })
+        if (!response.data) return
+        userStore.setUser(response.data.user)
+      } catch (e) {
+
+      }
+    }
 
     const oAuthLogin = (provider: Providers) => {
       switch (provider) {
@@ -197,8 +255,11 @@ export default defineComponent({
     return {
       dialog,
       dialogTitle,
+      uname,
+      unameRules,
       isLogin,
       currentUser,
+      unameCreate,
       openDialog,
       oAuthLogin,
       logout

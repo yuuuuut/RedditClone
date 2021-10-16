@@ -7,6 +7,7 @@ class CreatePosts < ActiveRecord::Migration[6.1]
       t.boolean :spoiler, default: false, null: false
       t.boolean :nsfw, default: false, null: false
       t.integer :status, default: 0
+      t.integer :type, default: 0
       t.references :user, index: true
 
       t.timestamps

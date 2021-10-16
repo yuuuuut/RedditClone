@@ -9,6 +9,11 @@ Rails.application.routes.draw do
 
       namespace :account do
         get '/me', action: :me
+        resources :users do
+          collection do
+            patch '/update_uname', action: :update_uname
+          end
+        end
         resources :posts
       end
 

@@ -1,4 +1,4 @@
-json.current_user do
+json.user do
   json.id current_user.id
   json.uid current_user.uid
   json.uname current_user.uname
