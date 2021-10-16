@@ -9,6 +9,7 @@ Rails.application.routes.draw do
 
       namespace :account do
         get '/me', action: :me
+        resources :posts
       end
 
       resources :posts

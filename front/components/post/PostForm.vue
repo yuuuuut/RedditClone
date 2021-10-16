@@ -2,47 +2,91 @@
   <div class="form">
     <div class="d-flex justify-space-between">
       <h3 class="mb-3">Create a post</h3>
-      <div>DRAFTS</div>
+      <v-dialog
+        v-model="draftDialog"
+        width="500"
+        scrollable
+        no-click-animation
+      >
+        <template #activator="{ on, attrs }">
+          <v-chip
+            class="ma-2"
+            color="primary"
+            text-color="primary"
+            outlined
+            v-bind="attrs"
+            v-on="on"
+          >
+            DRAFTS
+            <v-avatar v-if="draftPosts.length" right class="blue-grey lighten-5">
+              {{ draftPosts.length }}
+            </v-avatar>
+          </v-chip>
+        </template>
+        <v-card>
+          <div class="pa-2">
+            Drafts <span class="draft-post__length-text">{{ draftPosts.length }}/10</span>
+          </div>
+          <v-divider />
+          <v-card-text style="max-height: 250px;">
+            <div v-for="post in draftPosts" :key="post.id">
+              <div class="py-1 px-2" @click="selectDraftPosr(post.id)">
+                <div>{{ post.title }}</div>
+                <div class="d-flex">
+                  <div class="draft-post__sub-text">{{ post.user.name }}</div>
+                  <div class="draft-post__sub-text mx-1">・</div>
+                  <div class="draft-post__sub-text">Draft saved {{ post.created_at }}</div>
+                </div>
+              </div>
+              <v-divider />
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-dialog>
     </div>
     <v-divider class="divider" />
     <div class="target-select">
       <v-menu offset-y>
         <template #activator="{ on, attrs }">
-          <div v-bind="attrs" class="target-select__content" v-on="on">
-            <v-avatar v-if="selectTargetIcon.isAvatar" class="mr-3" size="25">
-              <v-img :src="selectTargetIcon.url" />
+          <div
+            v-bind="attrs"
+            class="target-select__content"
+            v-on="on"
+          >
+            <v-avatar
+              v-if="isParameter && currentUser"
+              class="mr-3"
+              size="25"
+            >
+              <v-img :src="currentUser.image" />
             </v-avatar>
             <div v-else class="not-avatar mr-3" />
-            <div>{{ selectTargetText }}</div>
+            <div
+              v-if="isParameter && currentUser"
+            >
+              {{ currentUser.name }}
+            </div>
+            <div v-else>
+              Choose a community
+            </div>
           </div>
         </template>
         <div>
           <div class="select-menu__user">
             <div class="select-menu__item-title">your profile</div>
-            <div class="select-menu__item" @click="clickSelectUserItem">
-              <v-avatar class="mr-3" size="40" tile><v-img :src="currentUser.image" /></v-avatar>
+            <div
+              v-if="currentUser"
+              class="select-menu__item"
+              @click="clickSelectUserItem"
+            >
+              <v-avatar class="mr-3" size="40" tile>
+                <v-img :src="currentUser.image" />
+              </v-avatar>
               <div>u/{{ currentUser.name }}</div>
             </div>
           </div>
         </div>
       </v-menu>
-
-      <!-- <div class="target-select__content" @click="clickSelectTarget">
-        <v-avatar v-if="selectTargetIcon.isAvatar" class="mr-3" size="25">
-          <v-img :src="selectTargetIcon.url" />
-        </v-avatar>
-        <div v-else class="not-avatar mr-3" />
-        <div>{{ selectTargetText }}</div>
-      </div> -->
-                <!-- <div v-if="isSelectMenu" class="select-menu">
-            <div class="select-menu__user">
-              <div class="select-menu__item-title">your profile</div>
-              <div class="select-menu__item" @click="clickSelectUserItem">
-                <v-avatar class="mr-3" size="40" tile><v-img :src="currentUser.image" /></v-avatar>
-                <div>u/{{ currentUser.name }}</div>
-              </div>
-            </div>
-          </div> -->
     </div>
     <v-card>
       <v-tabs
@@ -160,10 +204,13 @@
       </div>
       <v-divider />
       <div class="d-flex justify-end pa-3">
-        <v-chip color="primary" class="mr-3">
+        <v-chip v-if="isDraftQuery.isQuery" :disabled="!isParameter" color="primary" class="mr-3" @click="createDraftPost">
+          UPDATE DRAFT
+        </v-chip>
+        <v-chip v-else :disabled="!isParameter" color="primary" class="mr-3" @click="createDraftPost">
           SAVE DRAFT
         </v-chip>
-        <v-chip color="black" text-color="white" :disabled="!post.title.length" @click="createPost">
+        <v-chip color="black" text-color="white" :disabled="!isParameter" @click="createPost">
           POST
         </v-chip>
       </div>
@@ -185,7 +232,10 @@ export default defineComponent({
 
     const tab = ref(null)
     const tabs = ref(['POST', 'IMAGE', 'LINK'])
+    const draftDialog = ref(false)
     const isImageHover = ref(false)
+    const draftPosts = ref([])
+    const isDraftPostsLoad = ref(true)
     const post = ref({
       title: '',
       text: '',
@@ -198,26 +248,30 @@ export default defineComponent({
       uid: '',
       url: ''
     })
-    const isSelectMenu = ref(false)
 
-    const selectTargetIcon = computed(() => {
+    /**
+     * Computed
+     */
+    const isParameter = computed(() => {
       const name = route.value.name
-      if (name === 'u-name-submit') return { isAvatar: true, url: currentUser.value.image }
-      return { isAvatar: false, url: '' }
+      if (name === 'u-name-submit') return true
+      return false
     })
-    const selectTargetText = computed(() => {
-      const name = route.value.name
-      if (name === 'u-name-submit') return currentUser.value.name
-      return 'Choose a community'
+    const isDraftQuery = computed(() => {
+      const r = route.value.query.draft
+      return r ? { isQuery: true, draftId: r } : { isQuery: false, draftId: '' }
     })
-
     const currentUser = computed(() => {
       return userStore.currentUser
     })
 
+    /**
+     * Mounted
+     */
     onMounted(() => {
-      const postData = JSON.parse(localStorage.getItem('post-value'))
-      const postImageData = JSON.parse(localStorage.getItem('post-image'))
+      getDraftPosts()
+      const postData= JSON.parse(localStorage.getItem('post-value')!)
+      const postImageData = JSON.parse(localStorage.getItem('post-image')!)
       if (postData) {
         post.value = postData
         localStorage.removeItem('post-value')
@@ -228,6 +282,9 @@ export default defineComponent({
       }
     })
 
+    /**
+     * Unmount
+     */
     onBeforeUnmount(() => {
       if (route.value.name === 'u-name-submit' ||
           route.value.name === 'submit'
@@ -237,14 +294,23 @@ export default defineComponent({
       }
     })
 
-    const clickSelectTarget = () => {
-      isSelectMenu.value = !isSelectMenu.value
+    /**
+     * Method
+     */
+    const getDraftPosts = async () => {
+      const response = await $axios.get('/account/posts?status=draft')
+      if (!response.data) return
+      draftPosts.value = response.data.posts
+      isDraftPostsLoad.value = false
     }
 
+    // const selectDraftPosr = async (postId: string) => {
+    //   const response = await $axios.get(`/account/posts/${postId}`)
+    // }
+
     const clickSelectUserItem = () => {
-      isSelectMenu.value = false
+      if (!currentUser.value) return
       router.push(`/u/${currentUser.value.name}/submit`)
-      selectTargetText.value = 'u/' + currentUser.value.name
     }
 
     const btnclick = () => {
@@ -261,8 +327,14 @@ export default defineComponent({
     }
 
     const createPost = async () => {
+      await $axios.post('/posts', { post: post.value, post_image: postImage.value })
+    }
+
+    const createDraftPost = async () => {
+      post.value.status = 'draft'
       const response = await $axios.post('/posts', { post: post.value, post_image: postImage.value })
-      console.log(response)
+      const resPost = response.data.post
+      router.push(`/u/${resPost.user.name}/submit?draft=${resPost.id}`)
     }
 
     const imageUpload = async (file: Blob) => {
@@ -291,19 +363,21 @@ export default defineComponent({
     return {
       tab,
       tabs,
+      draftDialog,
       post,
       postImage,
       isImageHover,
-      isSelectMenu,
-      selectTargetText,
-      selectTargetIcon,
+      isDraftQuery,
+      draftPosts,
+      isParameter,
       currentUser,
-      clickSelectTarget,
       clickSelectUserItem,
+      getDraftPosts,
       imageMouseOver,
       imageMouseLeave,
       btnclick,
       createPost,
+      createDraftPost,
       imageUpload,
       deleteImage,
     }
@@ -317,6 +391,15 @@ export default defineComponent({
   box-shadow: initial;
   border: 1px solid #dae0e6;
   max-height: 300px;
+}
+
+::v-deep .v-dialog {
+  transition: initial !important;
+}
+
+.v-card__text {
+  padding: initial !important;
+  color: initial !important;
 }
 
 .form {
@@ -348,6 +431,19 @@ export default defineComponent({
     border-radius: 50%;
     border: 1px dashed gray;
   }
+}
+
+.draft-content {
+  max-height: 200px;
+}
+
+.draft-post__length-text {
+  font-size: 13px;
+}
+
+.draft-post__sub-text {
+  font-size: 14px;
+  color: #8d8d8d;
 }
 
 .select-menu__user {

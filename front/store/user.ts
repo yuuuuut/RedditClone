@@ -8,6 +8,7 @@ export interface UserType {
   uid: string
   image: string
   email: string
+  name: string
 }
 
 export type Providers = "Google" | "Twitter"

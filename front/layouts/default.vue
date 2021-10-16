@@ -90,7 +90,7 @@
               v-on="on"
             >
               <v-icon v-if="!isLogin" color="black">mdi-account-outline</v-icon>
-              <div v-if="isLogin" class="current-user__header">
+              <div v-if="isLogin && currentUser" class="current-user__header">
                 <v-avatar size="30">
                   <img :src="currentUser.image" />
                 </v-avatar>
@@ -206,6 +206,12 @@ export default defineComponent({
   }
 })
 </script>
+
+<style lang="scss">
+.v-overlay {
+  transition: initial !important;
+}
+</style>
 
 <style lang="scss" scoped>
 a {
