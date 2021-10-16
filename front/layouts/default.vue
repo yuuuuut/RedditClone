@@ -173,6 +173,7 @@
               <v-btn
                 color="primary"
                 width="100%"
+                :disabled="isCorrectUname"
                 @click="unameCreate"
               >
                 Create
@@ -196,17 +197,20 @@ type dialogType = "LOGIN" | "SIGNUP"
 export default defineComponent({
   setup() {
     const router = useRouter()
+    const pattern = /^[0-9a-zA-Z]*$/
 
     const dialog = ref(false)
     const dialogTitle = ref<string>("")
     const uname = ref('')
     const unameRules = ref([
       (v: string) => {
-        const pattern = /^[0-9a-zA-Z]*$/
         return pattern.test(v) || 'Please enter only alphanumeric characters'
       }
     ])
 
+    const isCorrectUname = computed(() => {
+      return !uname.value || !pattern.test(uname.value)
+    })
     const isLogin = computed(() => {
       return !!userStore.currentUser
     })
@@ -257,6 +261,7 @@ export default defineComponent({
       dialogTitle,
       uname,
       unameRules,
+      isCorrectUname,
       isLogin,
       currentUser,
       unameCreate,
