@@ -187,7 +187,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent,ref, useRouter } from '@nuxtjs/composition-api'
+import { computed, defineComponent, ref, useRouter } from '@nuxtjs/composition-api'
 import { userStore } from '@/plugins/store-accessor'
 import { Providers } from '~/store/user'
 import { $axios } from '~/utils/api'
@@ -244,17 +244,11 @@ export default defineComponent({
       dialog.value = true
     }
 
-    const setCurrentUser = () => {
-      userStore.getCurrentUser()
-    }
-
     const logout = async () => {
       const success = await userStore.logout()
       if (!success) return
       router.push('/')
     }
-
-    setCurrentUser()
 
     return {
       dialog,

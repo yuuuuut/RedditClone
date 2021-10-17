@@ -6,11 +6,11 @@ export type CustomRequestConfig = AxiosRequestConfig & {
   dontDisplayErrorPage?: boolean
 }
 
-export const accessor: Plugin = ({ $axios, error }): void => {
+export const accessor: Plugin = ({ $axios, $cookies, error }): void => {
   $axios.onRequest((config) => {
-    config.headers['access-token'] = localStorage.getItem('access-token')
-    config.headers.client = localStorage.getItem('client')
-    config.headers.uid = localStorage.getItem('uid')
+    config.headers['access-token'] = $cookies.get('access-token')
+    config.headers.client = $cookies.get('client')
+    config.headers.uid = $cookies.get('uid')
     config.headers.Accept = 'application/json'
   })
 

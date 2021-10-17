@@ -7,6 +7,7 @@
 <script lang="ts">
 import { defineComponent, onMounted, useRoute, useRouter } from '@nuxtjs/composition-api'
 import { userStore } from '~/plugins/store-accessor'
+import { $cookies } from '~/utils/cookies'
 
 export default defineComponent({
   setup() {
@@ -18,9 +19,9 @@ export default defineComponent({
     })
 
     const callback = () => {
-      localStorage.setItem('access-token', route.value.query.access_token as string)
-      localStorage.setItem('client', route.value.query.client as string)
-      localStorage.setItem('uid', route.value.query.uid as string)
+      $cookies.set('access-token', route.value.query.access_token)
+      $cookies.set('client', route.value.query.client)
+      $cookies.set('uid', route.value.query.uid)
 
       userStore.getCurrentUser()
       router.push('/')

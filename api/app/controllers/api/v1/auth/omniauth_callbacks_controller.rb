@@ -27,4 +27,11 @@ class Api::V1::Auth::OmniauthCallbacksController < DeviseTokenAuth::OmniauthCall
   
     redirect_to "http://localhost:8080/auth/callback?access_token=#{access_token}&client=#{client}&uid=#{uid}"
   end
+
+  def assign_provider_attrs(user, auth_hash)
+    super
+    user.assign_attributes({
+      uid: auth_hash['info']['email']
+    })
+  end
 end
