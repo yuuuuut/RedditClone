@@ -21,7 +21,8 @@ class Api::V1::PostsController < Api::V1::ApplicationController
       :url,
       :spoiler,
       :nsfw,
-      :status
+      :status,
+      :type
     ).merge(user: current_user)
   end
 

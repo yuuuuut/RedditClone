@@ -6,6 +6,7 @@ json.post do
   json.url @post.url
   json.spoiler @post.spoiler
   json.nsfw @post.nsfw
+  json.type @post.type
   json.user do
     json.id @post.user.id
     json.name @post.user.name

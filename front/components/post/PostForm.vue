@@ -231,6 +231,8 @@ import { $axios } from "~/utils/api"
 
 export default defineComponent({
   setup() {
+    const USER_SUBMIT_ROUTE = 'user-name-submit'
+
     const route = useRoute()
     const router = useRouter()
 
@@ -246,7 +248,8 @@ export default defineComponent({
       url: '',
       spoiler: false,
       nsfw: false,
-      status: "public"
+      status: "public",
+      type: 'none'
     })
     const postImage = ref({
       uid: '',
@@ -258,7 +261,7 @@ export default defineComponent({
      */
     const isParameter = computed(() => {
       const name = route.value.name
-      if (name === 'user-name-submit') return true
+      if (name === USER_SUBMIT_ROUTE) return true
       return false
     })
     const isDraftQuery = computed(() => {
@@ -291,7 +294,7 @@ export default defineComponent({
      * Unmount
      */
     onBeforeUnmount(() => {
-      if (route.value.name === 'user-name-submit' ||
+      if (route.value.name === USER_SUBMIT_ROUTE ||
           route.value.name === 'submit'
       ) {
         if (post.value) {
@@ -342,6 +345,10 @@ export default defineComponent({
     }
 
     const createPost = async () => {
+      console.log(route.value.name === USER_SUBMIT_ROUTE)
+      if (route.value.name === USER_SUBMIT_ROUTE) {
+        post.value.type = 'user'
+      }
       await $axios.post('/posts', { post: post.value, post_image: postImage.value })
     }
 

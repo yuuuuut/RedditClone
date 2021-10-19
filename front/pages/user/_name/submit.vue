@@ -14,6 +14,7 @@ export default defineComponent({
   components: {
     PostForm
   },
+  middleware: ['identification'],
   setup() {
   }
 })
