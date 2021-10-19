@@ -6,7 +6,7 @@ export type CustomRequestConfig = AxiosRequestConfig & {
   dontDisplayErrorPage?: boolean
 }
 
-export const accessor: Plugin = ({ $axios, $cookies, error }): void => {
+export const accessor: Plugin = ({ $axios, $cookies, store, redirect, error }): void => {
   $axios.onRequest((config) => {
     config.headers['access-token'] = $cookies.get('access-token')
     config.headers.client = $cookies.get('client')
@@ -14,13 +14,29 @@ export const accessor: Plugin = ({ $axios, $cookies, error }): void => {
     config.headers.Accept = 'application/json'
   })
 
+  $axios.onResponse((config) => {
+    if (config.headers['access-token'] && config.headers.uid && config.headers.client) {
+      $cookies.set('access-token', config.headers['access-token'])
+      $cookies.set('client', config.headers.client)
+      $cookies.set('uid', config.headers.uid)
+    }
+  })
+
   $axios.onError((axiosError: AxiosError) => {
     const response = axiosError.response
     const status = response?.status ?? 500
 
-    if (response?.config.url === '/account/me') return
-    if ((axiosError.config as CustomRequestConfig)?.dontDisplayErrorPage) return
+    // sign_outの404エラーは無視
+    if (response?.config.url === '/auth/sign_out') return
 
+    // 401エラーの場合はログアウトさせてTopページへ
+    if (status === 401) {
+      store.dispatch('user/logout')
+      redirect('/')
+      return
+    }
+
+    if ((axiosError.config as CustomRequestConfig)?.dontDisplayErrorPage) return
     error({ statusCode: status })
   })
   initializeAxios($axios)

@@ -24,11 +24,22 @@ export default class User extends VuexModule {
   @Mutation
   setUser (user: UserType | null) {
     this.user = user
+    $cookies.set('auth', { user, isLogin: true })
   }
 
   @Mutation
   setIsLogin (v: boolean) {
     this.isLogin = v
+  }
+
+  @Mutation
+  deleteAuth () {
+    this.user = null
+    this.isLogin = false
+    $cookies.remove('access-token')
+    $cookies.remove('client')
+    $cookies.remove('uid')
+    $cookies.remove('auth')
   }
 
   get currentUser () {
@@ -40,32 +51,32 @@ export default class User extends VuexModule {
   }
 
   @Action({ rawError: true })
-  public async getCurrentUser () {
-    const response = await $axios.get('/account/me')
-    if (response.status !== 200) {
-      this.setUser(null)
-      this.setIsLogin(false)
-      return
-    }
+  public async getCurrentUser (payload: { currentUser: UserType | null, isLogin: boolean }) {
+    if (payload.isLogin) {
+      this.setUser(payload.currentUser)
+      this.setIsLogin(true)
+    } else {
+      const response = await $axios.get('/account/me')
+      if (response.status !== 200) {
+        this.setUser(null)
+        this.setIsLogin(false)
+        return
+      }
 
-    const currentUser = response.data.current_user
-    this.setUser(currentUser)
-    this.setIsLogin(true)
+      const currentUser = response.data.current_user
+      this.setUser(currentUser)
+      this.setIsLogin(true)
+    }
   }
 
   @Action({ rawError: true })
   public async logout () {
-    const response = await $axios.delete('/auth/sign_out')
+    try {
+      await $axios.delete('/auth/sign_out')
 
-    if (!response.data.success) {
-      return false
+      this.deleteAuth()
+    } catch (e) {
+      this.deleteAuth()
     }
-
-    this.setUser(null)
-    this.setIsLogin(false)
-    $cookies.remove('access-token')
-    $cookies.remove('client')
-    $cookies.remove('uid')
-    return true
   }
 }

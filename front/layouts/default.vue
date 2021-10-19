@@ -245,8 +245,7 @@ export default defineComponent({
     }
 
     const logout = async () => {
-      const success = await userStore.logout()
-      if (!success) return
+      await userStore.logout()
       router.push('/')
     }
 
