@@ -26,9 +26,12 @@ export const accessor: Plugin = ({ $axios, $cookies, store, redirect, error }): 
     const response = axiosError.response
     const status = response?.status ?? 500
 
+    console.log(response)
+
     // sign_outの404エラーは無視
     if (response?.config.url === '/auth/sign_out') return
-
+    // 422 Validationエラーは無視
+    if (status === 422) return
     // 401エラーの場合はログアウトさせてTopページへ
     if (status === 401) {
       store.dispatch('user/logout')

@@ -18,6 +18,7 @@
             text-color="primary"
             outlined
             v-bind="attrs"
+            :disabled="!draftPosts.length"
             v-on="on"
           >
             DRAFTS

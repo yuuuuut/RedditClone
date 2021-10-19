@@ -49,7 +49,7 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
-      <v-spacer></v-spacer>
+
       <div class="mr-8">
         <template v-if="!isLogin">
           <v-btn
@@ -166,6 +166,11 @@
                 :rules="unameRules"
               />
             </v-col>
+            <v-col v-if="errors.length" cols="12" class="px-6 mb-1">
+              <div v-for="(e, i) in errors" :key="`uname-error-${i}`" style="color: red;">
+                {{ e }}
+              </div>
+            </v-col>
             <v-col cols="12" class="px-6 mb-5">
               <div>You cannot create an ID that already exists.</div>
             </v-col>
@@ -202,6 +207,7 @@ export default defineComponent({
     const dialog = ref(false)
     const dialogTitle = ref<string>("")
     const uname = ref('')
+    const errors = ref<string[]>([])
     const unameRules = ref([
       (v: string) => {
         return pattern.test(v) || 'Please enter only alphanumeric characters'
@@ -223,8 +229,11 @@ export default defineComponent({
         const response = await $axios.patch('/account/users/update_uname', { uname: uname.value })
         if (!response.data) return
         userStore.setUser(response.data.user)
+        errors.value = []
       } catch (e) {
-
+        if (e.response.data.status === 422) {
+          errors.value.push('This ID is already in use')
+        }
       }
     }
 
@@ -254,6 +263,7 @@ export default defineComponent({
       dialogTitle,
       uname,
       unameRules,
+      errors,
       isCorrectUname,
       isLogin,
       currentUser,
@@ -282,6 +292,10 @@ a {
   background-color: #dae0e6;
 }
 
+.v-btn {
+  text-transform: initial !important;
+}
+
 .v-btn.v-btn + .v-btn {
   margin-left: 0 !important;
 }
@@ -304,18 +318,24 @@ a {
   min-height: 34px !important;
 }
 
+::v-deep .v-toolbar__content {
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+}
+
 .header-icon {
-  margin-right: 70px;
+  margin-right: 80px;
 }
 
 .current-user__header {
-  min-width: 100px;
+  min-width: 150px;
   display: flex;
 
   .current-user__name {
     color: black;
-    margin-top: 5px;
-    margin-left: 7px;
+    margin-top: 2px;
+    margin-left: 3px;
     font-size: 12px;
   }
 }

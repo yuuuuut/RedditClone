@@ -10,7 +10,6 @@ end
 
 json.user do
   json.id @post.user.id
-
   json.name @post.user.name
   json.uname @post.user.uname
 end

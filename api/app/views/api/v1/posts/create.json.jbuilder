@@ -9,6 +9,7 @@ json.post do
   json.user do
     json.id @post.user.id
     json.name @post.user.name
+    json.uname @post.user.uname
   end
   json.post_image @post.post_image
 end
