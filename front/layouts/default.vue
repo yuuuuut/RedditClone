@@ -1,7 +1,11 @@
 <template>
   <v-app>
     <v-app-bar color="white" height="48" app>
-      <v-toolbar-title>Reddit Clone</v-toolbar-title>
+      <v-toolbar-title>
+        <NuxtLink to="/">
+          Reddit Clone
+        </NuxtLink>
+      </v-toolbar-title>
       <v-text-field
         hide-details
         outlined
@@ -45,7 +49,7 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
-      <v-spacer></v-spacer>
+
       <div class="mr-8">
         <template v-if="!isLogin">
           <v-btn
@@ -71,7 +75,9 @@
         </template>
         <template v-if="isLogin">
           <v-icon class="mt-1 mr-4" color="black">mdi-bell-outline</v-icon>
-          <v-icon class="mt-1 header-icon" color="black">mdi-plus</v-icon>
+          <NuxtLink to="/submit">
+            <v-icon v-bind="attrs" class="mt-1 header-icon" color="black" v-on="on">mdi-plus</v-icon>
+          </NuxtLink>
         </template>
         <v-menu
           offset-y
@@ -84,11 +90,11 @@
               v-on="on"
             >
               <v-icon v-if="!isLogin" color="black">mdi-account-outline</v-icon>
-              <div v-if="isLogin" class="current-user__header">
+              <div v-if="isLogin && currentUser" class="current-user__header">
                 <v-avatar size="30">
                   <img :src="currentUser.image" />
                 </v-avatar>
-                <div class="current-user__name">{{ currentUser.name }}</div>
+                <div class="current-user__name">{{ currentUser.uname }}</div>
               </div>
               <v-icon color="black">mdi-chevron-down</v-icon>
             </v-btn>
@@ -136,6 +142,52 @@
         <Nuxt />
       </v-container>
     </v-main>
+    <v-dialog
+      v-if="currentUser"
+      v-model="currentUser.isFirstLogin"
+      persistent
+      max-width="500"
+    >
+      <v-card>
+        <v-card-title class="text-h5">
+          Please create an ID
+        </v-card-title>
+        <div class="pb-7">
+          <v-row no-gutters>
+            <v-col cols="12" class="px-6 mb-1">
+              <v-text-field
+                v-model="uname"
+                outlined
+                width="100%"
+                hide-details="auto"
+                prefix="Own_"
+                counter
+                maxlength="10"
+                :rules="unameRules"
+              />
+            </v-col>
+            <v-col v-if="errors.length" cols="12" class="px-6 mb-1">
+              <div v-for="(e, i) in errors" :key="`uname-error-${i}`" style="color: red;">
+                {{ e }}
+              </div>
+            </v-col>
+            <v-col cols="12" class="px-6 mb-5">
+              <div>You cannot create an ID that already exists.</div>
+            </v-col>
+            <v-col cols="12" class="px-6">
+              <v-btn
+                color="primary"
+                width="100%"
+                :disabled="isCorrectUname"
+                @click="unameCreate"
+              >
+                Create
+              </v-btn>
+            </v-col>
+          </v-row>
+        </div>
+      </v-card>
+    </v-dialog>
   </v-app>
 </template>
 
@@ -143,22 +195,47 @@
 import { computed, defineComponent, ref, useRouter } from '@nuxtjs/composition-api'
 import { userStore } from '@/plugins/store-accessor'
 import { Providers } from '~/store/user'
+import { $axios } from '~/utils/api'
 
 type dialogType = "LOGIN" | "SIGNUP"
 
 export default defineComponent({
   setup() {
     const router = useRouter()
+    const pattern = /^[0-9a-zA-Z]*$/
 
     const dialog = ref(false)
     const dialogTitle = ref<string>("")
+    const uname = ref('')
+    const errors = ref<string[]>([])
+    const unameRules = ref([
+      (v: string) => {
+        return pattern.test(v) || 'Please enter only alphanumeric characters'
+      }
+    ])
 
+    const isCorrectUname = computed(() => {
+      return !uname.value || !pattern.test(uname.value)
+    })
     const isLogin = computed(() => {
       return !!userStore.currentUser
     })
     const currentUser = computed(() => {
       return userStore.currentUser
     })
+
+    const unameCreate = async () => {
+      try {
+        const response = await $axios.patch('/account/users/update_uname', { uname: uname.value })
+        if (!response.data) return
+        userStore.setUser(response.data.user)
+        errors.value = []
+      } catch (e) {
+        if (e.response.data.status === 422) {
+          errors.value.push('This ID is already in use')
+        }
+      }
+    }
 
     const oAuthLogin = (provider: Providers) => {
       switch (provider) {
@@ -176,23 +253,21 @@ export default defineComponent({
       dialog.value = true
     }
 
-    const setCurrentUser = () => {
-      userStore.getCurrentUser()
-    }
-
     const logout = async () => {
-      const success = await userStore.logout()
-      if (!success) return
+      await userStore.logout()
       router.push('/')
     }
-
-    setCurrentUser()
 
     return {
       dialog,
       dialogTitle,
+      uname,
+      unameRules,
+      errors,
+      isCorrectUname,
       isLogin,
       currentUser,
+      unameCreate,
       openDialog,
       oAuthLogin,
       logout
@@ -201,9 +276,24 @@ export default defineComponent({
 })
 </script>
 
+<style lang="scss">
+.v-overlay {
+  transition: initial !important;
+}
+</style>
+
 <style lang="scss" scoped>
+a {
+  text-decoration: none;
+  color: #000 !important;
+}
+
 .main {
   background-color: #dae0e6;
+}
+
+.v-btn {
+  text-transform: initial !important;
 }
 
 .v-btn.v-btn + .v-btn {
@@ -228,18 +318,24 @@ export default defineComponent({
   min-height: 34px !important;
 }
 
+::v-deep .v-toolbar__content {
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+}
+
 .header-icon {
-  margin-right: 70px;
+  margin-right: 80px;
 }
 
 .current-user__header {
-  min-width: 100px;
+  min-width: 150px;
   display: flex;
 
   .current-user__name {
     color: black;
-    margin-top: 5px;
-    margin-left: 7px;
+    margin-top: 2px;
+    margin-left: 3px;
     font-size: 12px;
   }
 }

@@ -10,11 +10,9 @@
 
 <script lang="ts">
 import { defineComponent } from '@vue/composition-api'
-import TopCommunities from '~/components/indexes/TopCommunities.vue'
-import TrendingToday from '~/components/indexes/TrendingToday.vue'
-import PopularPosts from '~/components/indexes/PopularPosts.vue'
-
-import { userStore } from '~/plugins/store-accessor'
+import TopCommunities from '~/components/index/TopCommunities.vue'
+import TrendingToday from '~/components/index/TrendingToday.vue'
+import PopularPosts from '~/components/index/PopularPosts.vue'
 
 export default defineComponent({
   components: {
@@ -23,7 +21,6 @@ export default defineComponent({
     TopCommunities
   },
   setup() {
-    console.log(userStore)
   }
 })
 </script>

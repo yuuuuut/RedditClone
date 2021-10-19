@@ -6,21 +6,40 @@ export type CustomRequestConfig = AxiosRequestConfig & {
   dontDisplayErrorPage?: boolean
 }
 
-export const accessor: Plugin = ({ $axios, error }): void => {
+export const accessor: Plugin = ({ $axios, $cookies, store, redirect, error }): void => {
   $axios.onRequest((config) => {
-    config.headers['access-token'] = localStorage.getItem('access-token')
-    config.headers.client = localStorage.getItem('client')
-    config.headers.uid = localStorage.getItem('uid')
+    config.headers['access-token'] = $cookies.get('access-token')
+    config.headers.client = $cookies.get('client')
+    config.headers.uid = $cookies.get('uid')
     config.headers.Accept = 'application/json'
+  })
+
+  $axios.onResponse((config) => {
+    if (config.headers['access-token'] && config.headers.uid && config.headers.client) {
+      $cookies.set('access-token', config.headers['access-token'])
+      $cookies.set('client', config.headers.client)
+      $cookies.set('uid', config.headers.uid)
+    }
   })
 
   $axios.onError((axiosError: AxiosError) => {
     const response = axiosError.response
     const status = response?.status ?? 500
 
-    if (response?.config.url === '/account/me') return
-    if ((axiosError.config as CustomRequestConfig)?.dontDisplayErrorPage) return
+    console.log(response)
 
+    // sign_outの404エラーは無視
+    if (response?.config.url === '/auth/sign_out') return
+    // 422 Validationエラーは無視
+    if (status === 422) return
+    // 401エラーの場合はログアウトさせてTopページへ
+    if (status === 401) {
+      store.dispatch('user/logout')
+      redirect('/')
+      return
+    }
+
+    if ((axiosError.config as CustomRequestConfig)?.dontDisplayErrorPage) return
     error({ statusCode: status })
   })
   initializeAxios($axios)
