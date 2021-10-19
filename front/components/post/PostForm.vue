@@ -36,7 +36,7 @@
               <div class="py-1 px-2" @click="selectDraftPosr(post.id)">
                 <div>{{ post.title }}</div>
                 <div class="d-flex">
-                  <div class="draft-post__sub-text">{{ post.user.name }}</div>
+                  <div class="draft-post__sub-text">{{ post.user.uname }}</div>
                   <div class="draft-post__sub-text mx-1">・</div>
                   <div class="draft-post__sub-text">Draft saved {{ post.created_at }}</div>
                 </div>
@@ -67,7 +67,7 @@
             <div
               v-if="isParameter && currentUser"
             >
-              {{ currentUser.name }}
+              {{ currentUser.uname }}
             </div>
             <div v-else>
               Choose a community
@@ -85,7 +85,7 @@
               <v-avatar class="mr-3" size="40" tile>
                 <v-img :src="currentUser.image" />
               </v-avatar>
-              <div>u/{{ currentUser.name }}</div>
+              <div>user/{{ currentUser.uname }}</div>
             </div>
           </div>
         </div>
@@ -257,7 +257,7 @@ export default defineComponent({
      */
     const isParameter = computed(() => {
       const name = route.value.name
-      if (name === 'u-name-submit') return true
+      if (name === 'user-name-submit') return true
       return false
     })
     const isDraftQuery = computed(() => {
@@ -273,14 +273,15 @@ export default defineComponent({
      */
     onMounted(() => {
       getDraftPosts()
-      const postData= JSON.parse(localStorage.getItem('post-value')!)
-      const postImageData = JSON.parse(localStorage.getItem('post-image')!)
+
+      const postData = localStorage.getItem('post-value')
+      const postImageData = localStorage.getItem('post-image')
       if (postData) {
-        post.value = postData
+        post.value = JSON.parse(localStorage.getItem('post-value')!)
         localStorage.removeItem('post-value')
       }
       if (postImageData) {
-        postImage.value = postImageData
+        postImage.value = JSON.parse(localStorage.getItem('post-image')!)
         localStorage.removeItem('post-image')
       }
     })
@@ -289,11 +290,15 @@ export default defineComponent({
      * Unmount
      */
     onBeforeUnmount(() => {
-      if (route.value.name === 'u-name-submit' ||
+      if (route.value.name === 'user-name-submit' ||
           route.value.name === 'submit'
       ) {
-        localStorage.setItem('post-value',  JSON.stringify(post.value))
-        localStorage.setItem('post-image', JSON.stringify(postImage.value))
+        if (post.value) {
+          localStorage.setItem('post-value',  JSON.stringify(post.value))
+        }
+        if (postImage.value) {
+          localStorage.setItem('post-image', JSON.stringify(postImage.value))
+        }
       }
     })
 
@@ -313,13 +318,13 @@ export default defineComponent({
       post.value = response.data.post
       postImage.value = response.data.post_image
       draftDialog.value = false
-      router.push(`/u/${response.data.user.name}/submit?draft=${response.data.post.id}`)
+      router.push(`/user/${response.data.user.uname}/submit?draft=${response.data.post.id}`)
       console.log(response)
     }
 
     const clickSelectUserItem = () => {
       if (!currentUser.value) return
-      router.push(`/u/${currentUser.value.name}/submit`)
+      router.push(`/user/${currentUser.value.uname}/submit`)
     }
 
     const btnclick = () => {
@@ -344,7 +349,7 @@ export default defineComponent({
       const response = await $axios.post('/posts', { post: post.value, post_image: postImage.value })
       const resPost = response.data.post
       draftPosts.value.push(resPost)
-      router.push(`/u/${resPost.user.name}/submit?draft=${resPost.id}`)
+      router.push(`/user/${resPost.user.uname}/submit?draft=${resPost.id}`)
     }
 
     const imageUpload = async (file: Blob) => {
