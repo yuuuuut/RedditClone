@@ -134,7 +134,7 @@
             </div>
             <div v-if="tab === 'IMAGE'">
               <div class="image-area">
-                <div v-if="!postImage.url" class="image-area__inner">
+                <div v-if="!post.postImage.url" class="image-area__inner">
                     <v-file-input
                       id="imageInput"
                       accept="image/*"
@@ -145,7 +145,7 @@
                     <v-btn color="primary" @click="btnclick">Upload Image</v-btn>
                 </div>
                 <div v-else class="upload-image__area">
-                  <img :src="postImage.url" class="image" @mouseover="imageMouseOver" @mouseleave="imageMouseLeave" />
+                  <img :src="post.postImage.url" class="image" @mouseover="imageMouseOver" @mouseleave="imageMouseLeave" />
                   <v-btn
                     v-show="isImageHover"
                     class="delete-icon mx-2"
@@ -208,13 +208,13 @@
       </div>
       <v-divider />
       <div class="d-flex justify-end pa-3">
-        <v-chip v-if="isDraftQuery.isQuery" :disabled="!isParameter" color="primary" class="mr-3" @click="createDraftPost">
+        <v-chip v-if="isDraftQuery.isQuery" :disabled="!isDraftQuery.isQuery" color="primary" class="mr-3" @click="updatePost(false)">
           UPDATE DRAFT
         </v-chip>
-        <v-chip v-else :disabled="!isParameter" color="primary" class="mr-3" @click="createDraftPost">
+        <v-chip v-else :disabled="!post.title" color="primary" class="mr-3" @click="createDraftPost">
           SAVE DRAFT
         </v-chip>
-        <v-chip color="black" text-color="white" :disabled="!isParameter" @click="createPost">
+        <v-chip color="black" text-color="white" :disabled="!isParameter" @click="isDraftQuery.isQuery ? updatePost(true) : createPost">
           POST
         </v-chip>
       </div>
@@ -223,16 +223,18 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onBeforeUnmount, onMounted, ref, useRoute, useRouter } from "@nuxtjs/composition-api"
+import { computed, defineComponent, onBeforeUnmount, onMounted, ref, useContext, useRoute, useRouter } from "@nuxtjs/composition-api"
 import { deleteObject, getDownloadURL, ref as r, uploadBytesResumable } from 'firebase/storage'
 import { storage } from "~/plugins/firebase"
 import { userStore } from "~/store"
+import { UserType } from "~/store/user"
 import { $axios } from "~/utils/api"
 
 export default defineComponent({
   setup() {
     const USER_SUBMIT_ROUTE = 'user-name-submit'
 
+    const { error } = useContext()
     const route = useRoute()
     const router = useRouter()
 
@@ -249,11 +251,11 @@ export default defineComponent({
       spoiler: false,
       nsfw: false,
       status: "public",
-      type: 'none'
-    })
-    const postImage = ref({
-      uid: '',
-      url: ''
+      type: 'none',
+      postImage: {
+        uid: '',
+        url: ''
+      }
     })
 
     /**
@@ -275,18 +277,17 @@ export default defineComponent({
     /**
      * Mounted
      */
-    onMounted(() => {
-      getDraftPosts()
+    onMounted(async () => {
+      await getDraftPosts()
+
+      if (route.value.query.draft) {
+        checkIsQueryDraftPost()
+      }
 
       const postData = localStorage.getItem('post-value')
-      const postImageData = localStorage.getItem('post-image')
       if (postData) {
         post.value = JSON.parse(localStorage.getItem('post-value')!)
         localStorage.removeItem('post-value')
-      }
-      if (postImageData) {
-        postImage.value = JSON.parse(localStorage.getItem('post-image')!)
-        localStorage.removeItem('post-image')
       }
     })
 
@@ -300,37 +301,16 @@ export default defineComponent({
         if (post.value) {
           localStorage.setItem('post-value',  JSON.stringify(post.value))
         }
-        if (postImage.value) {
-          localStorage.setItem('post-image', JSON.stringify(postImage.value))
-        }
       }
     })
 
     /**
-     * Method
+     * Methods
      */
-    const getDraftPosts = async () => {
-      const response = await $axios.get('/account/posts?status=draft')
-      if (!response.data) return
-      draftPosts.value = response.data.posts
-      isDraftPostsLoad.value = false
-    }
 
-    const selectDraftPosr = async (postId: string) => {
-      const response = await $axios.get(`/account/posts/${postId}`)
-      if (!response.data) return
-      post.value = response.data.post
-      postImage.value = response.data.post_image
-      draftDialog.value = false
-      router.push(`/user/${response.data.user.uname}/submit?draft=${response.data.post.id}`)
-      console.log(response)
-    }
-
-    const clickSelectUserItem = () => {
-      if (!currentUser.value) return
-      router.push(`/user/${currentUser.value.uname}/submit`)
-    }
-
+    /**
+     * file input を擬似的にclickさせる。
+     */
     const btnclick = () => {
       const elm = document.getElementById('imageInput') as HTMLElement
       elm.click()
@@ -344,56 +324,160 @@ export default defineComponent({
       isImageHover.value = false
     }
 
-    const createPost = async () => {
-      console.log(route.value.name === USER_SUBMIT_ROUTE)
-      if (route.value.name === USER_SUBMIT_ROUTE) {
-        post.value.type = 'user'
-      }
-      await $axios.post('/posts', { post: post.value, post_image: postImage.value })
+    /**
+     * queryで指定されたIDのPostがDraftPosts配列に存在しない場合
+     * 404エラーを返す。
+     */
+    const checkIsQueryDraftPost = () => {
+      const draftPost = draftPosts.value.find(p => {
+        return String(p.id) === route.value.query.draft
+      })
+      if (!draftPost) error({ statusCode: 404 })
+      post.value = draftPost
+      console.log(post.value)
+      console.log(post.value.post_image)
     }
 
+    /**
+     * statusがdraftのpostを取得する。
+     */
+    const getDraftPosts = async () => {
+      const response = await $axios.get('/account/posts?status=draft')
+      if (!response.data) return
+      draftPosts.value = response.data.posts
+      isDraftPostsLoad.value = false
+    }
+
+    /**
+     * postIdで指定されたIDのstatusがdraftのpostを取得する。
+     */
+    const selectDraftPosr = async (postId: number) => {
+      if (route.value.query.draft === String(postId)) {
+        draftDialog.value = false
+        return
+      }
+      const response = await $axios.get(`/account/posts/${postId}`)
+      if (!response.data) return
+      post.value = response.data.post
+      draftDialog.value = false
+      changePostTyprRouterPush(response.data.user, response.data.post)
+    }
+
+    /**
+     * 
+     */
+    const clickSelectUserItem = () => {
+      const draftId = route.value.query.draft
+      if (!currentUser.value) return
+      if (draftId) {
+        router.push(`/user/${currentUser.value.uname}/submit?draft=${draftId}`)
+      } else {
+        router.push(`/user/${currentUser.value.uname}/submit`)
+      }
+    }
+
+    const changePostType = () => {
+      if (route.value.name === USER_SUBMIT_ROUTE) {
+        post.value.type = 'user'
+      } else {
+        post.value.type = 'none'
+      }
+    }
+
+    const changePostTyprRouterPush = (user: UserType, post: any) => {
+      if (post.type === 'user') {
+        router.push(`/user/${user.uname}/submit?draft=${post.id}`)
+      } else {
+        router.push(`/submit?draft=${post.id}`)
+      }
+    }
+
+    /**
+     * Postを作成する。
+     * parameterがuserだった場合はpostのtypeをuserとして作成。
+     */
+    const createPost = async () => {
+      changePostType()
+      await $axios.post('/posts', { post: post.value })
+      router.push('/')
+    }
+
+    const updatePost = async (postPublic: boolean) => {
+      changePostType()
+      post.value.status = (postPublic) ? 'public' : 'draft'
+      try {
+        const response = await $axios.put(`/account/posts/${route.value.query.draft}`, { post: post.value, post_image: post.value.postImage })
+        if (!postPublic) {
+          post.value = response.data.post
+          draftPosts.value = draftPosts.value.filter(p => {
+            return p.id !== response.data.post.id
+          })
+          draftPosts.value.push(post.value)
+        } else {
+          router.push('/')
+        }
+      } catch (e) {
+        post.value.status = 'draft'
+      }
+    }
+
+    /**
+     * DraftPostを作成する。作成後は作成したPostのIDを持つqueryを付与する。
+     */
     const createDraftPost = async () => {
+      changePostType()
       post.value.status = 'draft'
-      const response = await $axios.post('/posts', { post: post.value, post_image: postImage.value })
+      const response = await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
       const resPost = response.data.post
       draftPosts.value.push(resPost)
-      router.push(`/user/${resPost.user.uname}/submit?draft=${resPost.id}`)
+      changePostTyprRouterPush(response.data.user, resPost)
     }
 
     const imageUpload = async (file: Blob) => {
       try {
-        postImage.value.url = ''
-        postImage.value.uid = ''
-        postImage.value.uid = new Date().getTime().toString() + Math.floor(Math.random() * 10).toString()
-        const storageRef = r(storage, `images/${postImage.value.uid}`)
+        post.value.postImage.url = ''
+        post.value.postImage.uid = ''
+        post.value.postImage.uid = new Date().getTime().toString() + Math.floor(Math.random() * 10).toString()
+        const storageRef = r(storage, `images/${post.value.postImage.uid}`)
         const task = uploadBytesResumable(storageRef, file)
         await task
         const url = await getDownloadURL(storageRef)
-        postImage.value.url = url
+        post.value.postImage.url = url
       } catch (e) {
         console.log(e)
-        postImage.value.url = ''
+        post.value.postImage.url = ''
       }
     }
 
     const deleteImage = async () => {
-      const storageRef = r(storage, `images/${postImage.value.uid}`)
-      await deleteObject(storageRef)
-      postImage.value.uid = ''
-      postImage.value.url = ''
+      console.log(post)
+      await $axios.$delete(`/post_images/${post.value.postImage.uid}`).then(async () => {
+        const storageRef = r(storage, `images/${post.value.postImage.uid}`)
+        await deleteObject(storageRef)
+        post.value.postImage.uid = ''
+        post.value.postImage.url = ''
+      })
     }
+
+    // const deleteFirabaseImage = async () => {
+    //           const storageRef = r(storage, `images/${post.value.postImage.uid}`)
+    //     await deleteObject(storageRef)
+    //     post.value.postImage.uid = ''
+    //     post.value.postImage.url = ''
+    //     post.value.postImage.id = ''
+    // }
 
     return {
       tab,
       tabs,
       draftDialog,
       post,
-      postImage,
       isImageHover,
       isDraftQuery,
       draftPosts,
       isParameter,
       currentUser,
+      checkIsQueryDraftPost,
       clickSelectUserItem,
       getDraftPosts,
       selectDraftPosr,
@@ -401,6 +485,7 @@ export default defineComponent({
       imageMouseLeave,
       btnclick,
       createPost,
+      updatePost,
       createDraftPost,
       imageUpload,
       deleteImage,

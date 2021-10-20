@@ -9,7 +9,9 @@ class Api::V1::PostsController < Api::V1::ApplicationController
   def create
     @post = Post.new
     @post.attributes = post_params
-    @post.create_post_image(post_image_params[:url], post_image_params[:uid])
+    if post_image_params[:url].present? || post_image_params[:uid].present?
+      @post.build_post_image(url: post_image_params[:url], uid: post_image_params[:uid])
+    end
     @post.save!
   end
 

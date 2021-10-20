@@ -12,5 +12,8 @@ json.post do
     json.name @post.user.name
     json.uname @post.user.uname
   end
-  json.post_image @post.post_image
+  json.postImage do
+    json.uid @post.post_image.present? ? @post.post_image.uid : ''
+    json.url @post.post_image.present? ? @post.post_image.url : ''
+  end
 end
