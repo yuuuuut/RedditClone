@@ -409,6 +409,10 @@ export default defineComponent({
         const response = await $axios.put(`/account/posts/${route.value.query.draft}`, { post: post.value, post_image: post.value.postImage })
         if (!postPublic) {
           post.value = response.data.post
+          draftPosts.value = draftPosts.value.filter(p => {
+            return p.id !== response.data.post.id
+          })
+          draftPosts.value.push(post.value)
         } else {
           router.push('/')
         }
