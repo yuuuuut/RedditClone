@@ -6,6 +6,7 @@ json.post do
   json.spoiler @post.spoiler
   json.nsfw @post.nsfw
   json.status @post.status
+  json.type @post.type
 end
 
 json.user do
@@ -16,6 +17,7 @@ end
 
 if @post.post_image.present?
   json.post_image do
+    json.id @post.post_image.id
     json.uid @post.post_image.uid
     json.url @post.post_image.url
   end

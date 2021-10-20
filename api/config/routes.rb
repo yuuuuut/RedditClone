@@ -18,6 +18,7 @@ Rails.application.routes.draw do
       end
 
       resources :posts
+      resources :post_images
     end
   end
 end

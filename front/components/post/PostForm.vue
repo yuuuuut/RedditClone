@@ -208,10 +208,10 @@
       </div>
       <v-divider />
       <div class="d-flex justify-end pa-3">
-        <v-chip v-if="isDraftQuery.isQuery" :disabled="!isParameter" color="primary" class="mr-3" @click="createDraftPost">
+        <v-chip v-if="isDraftQuery.isQuery" :disabled="!isDraftQuery.isQuery" color="primary" class="mr-3" @click="updatePost(false)">
           UPDATE DRAFT
         </v-chip>
-        <v-chip v-else :disabled="!isParameter" color="primary" class="mr-3" @click="createDraftPost">
+        <v-chip v-else :disabled="!post.title" color="primary" class="mr-3" @click="createDraftPost">
           SAVE DRAFT
         </v-chip>
         <v-chip color="black" text-color="white" :disabled="!isParameter" @click="isDraftQuery.isQuery ? updatePost(true) : createPost">
@@ -227,10 +227,11 @@ import { computed, defineComponent, onBeforeUnmount, onMounted, ref, useContext,
 import { deleteObject, getDownloadURL, ref as r, uploadBytesResumable } from 'firebase/storage'
 import { storage } from "~/plugins/firebase"
 import { userStore } from "~/store"
+import { UserType } from "~/store/user"
 import { $axios } from "~/utils/api"
 
 export default defineComponent({
-  setup(_, context) {
+  setup() {
     const USER_SUBMIT_ROUTE = 'user-name-submit'
 
     const { error } = useContext()
@@ -253,6 +254,7 @@ export default defineComponent({
       type: 'none'
     })
     const postImage = ref({
+      id: '',
       uid: '',
       url: ''
     })
@@ -336,10 +338,12 @@ export default defineComponent({
      * 404エラーを返す。
      */
     const checkIsQueryDraftPost = () => {
-      const isPost = draftPosts.value.some(p => {
+      const draftPost = draftPosts.value.find(p => {
         return String(p.id) === route.value.query.draft
       })
-      if (!isPost) error({ statusCode: 404 })
+      if (!draftPost) error({ statusCode: 404 })
+      post.value = draftPost
+      if (draftPost.post_image) postImage.value = draftPost.post_image
     }
 
     /**
@@ -355,21 +359,46 @@ export default defineComponent({
     /**
      * postIdで指定されたIDのstatusがdraftのpostを取得する。
      */
-    const selectDraftPosr = async (postId: string) => {
+    const selectDraftPosr = async (postId: number) => {
+      if (route.value.query.draft === String(postId)) {
+        draftDialog.value = false
+        return
+      }
       const response = await $axios.get(`/account/posts/${postId}`)
       if (!response.data) return
       post.value = response.data.post
       postImage.value = response.data.post_image
       draftDialog.value = false
-      router.push(`/user/${response.data.user.uname}/submit?draft=${response.data.post.id}`)
+      changePostTyprRouterPush(response.data.user, response.data.post)
     }
 
     /**
      * 
      */
     const clickSelectUserItem = () => {
+      const draftId = route.value.query.draft
       if (!currentUser.value) return
-      router.push(`/user/${currentUser.value.uname}/submit`)
+      if (draftId) {
+        router.push(`/user/${currentUser.value.uname}/submit?draft=${draftId}`)
+      } else {
+        router.push(`/user/${currentUser.value.uname}/submit`)
+      }
+    }
+
+    const changePostType = () => {
+      if (route.value.name === USER_SUBMIT_ROUTE) {
+        post.value.type = 'user'
+      } else {
+        post.value.type = 'none'
+      }
+    }
+
+    const changePostTyprRouterPush = (user: UserType, post: any) => {
+      if (post.type === 'user') {
+        router.push(`/user/${user.uname}/submit?draft=${post.id}`)
+      } else {
+        router.push(`/submit?draft=${post.id}`)
+      }
     }
 
     /**
@@ -377,43 +406,48 @@ export default defineComponent({
      * parameterがuserだった場合はpostのtypeをuserとして作成。
      */
     const createPost = async () => {
-      if (route.value.name === USER_SUBMIT_ROUTE) {
-        post.value.type = 'user'
-      }
+      changePostType()
       await $axios.post('/posts', { post: post.value, post_image: postImage.value })
       router.push('/')
     }
 
     const updatePost = async (postPublic: boolean) => {
-      if (route.value.name === USER_SUBMIT_ROUTE) {
-        post.value.type = 'user'
-      }
-      if (postPublic) {
-        post.value.status = 'public'
-        try {
-          await $axios.put(`/account/posts/${route.value.query.draft}`, { post: post.value, post_image: postImage.value })
+      changePostType()
+      post.value.status = (postPublic) ? 'public' : 'draft'
+      try {
+        const response = await $axios.put(`/account/posts/${route.value.query.draft}`, { post: post.value, post_image: postImage.value })
+        if (!postPublic) {
+          post.value = response.data.post
+          if (response.data.post_image) postImage.value = response.data.post_image
+        } else {
           router.push('/')
-        } catch (e) {
-          post.value.status = 'draft'
         }
+      } catch (e) {
+        post.value.status = 'draft'
       }
+
+      console.log(postImage)
     }
+
+    // 画像削除したらデータベースからも削除
 
     /**
      * DraftPostを作成する。作成後は作成したPostのIDを持つqueryを付与する。
      */
     const createDraftPost = async () => {
+      changePostType()
       post.value.status = 'draft'
       const response = await $axios.post('/posts', { post: post.value, post_image: postImage.value })
       const resPost = response.data.post
       draftPosts.value.push(resPost)
-      router.push(`/user/${resPost.user.uname}/submit?draft=${resPost.id}`)
+      changePostTyprRouterPush(response.data.user, resPost)
     }
 
     const imageUpload = async (file: Blob) => {
       try {
         postImage.value.url = ''
         postImage.value.uid = ''
+        postImage.value.id = ''
         postImage.value.uid = new Date().getTime().toString() + Math.floor(Math.random() * 10).toString()
         const storageRef = r(storage, `images/${postImage.value.uid}`)
         const task = uploadBytesResumable(storageRef, file)
@@ -427,10 +461,14 @@ export default defineComponent({
     }
 
     const deleteImage = async () => {
-      const storageRef = r(storage, `images/${postImage.value.uid}`)
-      await deleteObject(storageRef)
-      postImage.value.uid = ''
-      postImage.value.url = ''
+      console.log(postImage)
+      await $axios.$delete(`/post_images/${postImage.value.id}`).then(async () => {
+        const storageRef = r(storage, `images/${postImage.value.uid}`)
+        await deleteObject(storageRef)
+        postImage.value.uid = ''
+        postImage.value.url = ''
+        postImage.value.id = ''
+      })
     }
 
     return {
