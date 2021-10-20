@@ -214,7 +214,7 @@
         <v-chip v-else :disabled="!isParameter" color="primary" class="mr-3" @click="createDraftPost">
           SAVE DRAFT
         </v-chip>
-        <v-chip color="black" text-color="white" :disabled="!isParameter" @click="createPost">
+        <v-chip color="black" text-color="white" :disabled="!isParameter" @click="isDraftQuery.isQuery ? updatePost(true) : createPost">
           POST
         </v-chip>
       </div>
@@ -223,16 +223,17 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onBeforeUnmount, onMounted, ref, useRoute, useRouter } from "@nuxtjs/composition-api"
+import { computed, defineComponent, onBeforeUnmount, onMounted, ref, useContext, useRoute, useRouter } from "@nuxtjs/composition-api"
 import { deleteObject, getDownloadURL, ref as r, uploadBytesResumable } from 'firebase/storage'
 import { storage } from "~/plugins/firebase"
 import { userStore } from "~/store"
 import { $axios } from "~/utils/api"
 
 export default defineComponent({
-  setup() {
+  setup(_, context) {
     const USER_SUBMIT_ROUTE = 'user-name-submit'
 
+    const { error } = useContext()
     const route = useRoute()
     const router = useRouter()
 
@@ -275,8 +276,12 @@ export default defineComponent({
     /**
      * Mounted
      */
-    onMounted(() => {
-      getDraftPosts()
+    onMounted(async () => {
+      await getDraftPosts()
+
+      if (route.value.query.draft) {
+        checkIsQueryDraftPost()
+      }
 
       const postData = localStorage.getItem('post-value')
       const postImageData = localStorage.getItem('post-image')
@@ -307,30 +312,12 @@ export default defineComponent({
     })
 
     /**
-     * Method
+     * Methods
      */
-    const getDraftPosts = async () => {
-      const response = await $axios.get('/account/posts?status=draft')
-      if (!response.data) return
-      draftPosts.value = response.data.posts
-      isDraftPostsLoad.value = false
-    }
 
-    const selectDraftPosr = async (postId: string) => {
-      const response = await $axios.get(`/account/posts/${postId}`)
-      if (!response.data) return
-      post.value = response.data.post
-      postImage.value = response.data.post_image
-      draftDialog.value = false
-      router.push(`/user/${response.data.user.uname}/submit?draft=${response.data.post.id}`)
-      console.log(response)
-    }
-
-    const clickSelectUserItem = () => {
-      if (!currentUser.value) return
-      router.push(`/user/${currentUser.value.uname}/submit`)
-    }
-
+    /**
+     * file input を擬似的にclickさせる。
+     */
     const btnclick = () => {
       const elm = document.getElementById('imageInput') as HTMLElement
       elm.click()
@@ -344,14 +331,77 @@ export default defineComponent({
       isImageHover.value = false
     }
 
+    /**
+     * queryで指定されたIDのPostがDraftPosts配列に存在しない場合
+     * 404エラーを返す。
+     */
+    const checkIsQueryDraftPost = () => {
+      const isPost = draftPosts.value.some(p => {
+        return String(p.id) === route.value.query.draft
+      })
+      if (!isPost) error({ statusCode: 404 })
+    }
+
+    /**
+     * statusがdraftのpostを取得する。
+     */
+    const getDraftPosts = async () => {
+      const response = await $axios.get('/account/posts?status=draft')
+      if (!response.data) return
+      draftPosts.value = response.data.posts
+      isDraftPostsLoad.value = false
+    }
+
+    /**
+     * postIdで指定されたIDのstatusがdraftのpostを取得する。
+     */
+    const selectDraftPosr = async (postId: string) => {
+      const response = await $axios.get(`/account/posts/${postId}`)
+      if (!response.data) return
+      post.value = response.data.post
+      postImage.value = response.data.post_image
+      draftDialog.value = false
+      router.push(`/user/${response.data.user.uname}/submit?draft=${response.data.post.id}`)
+    }
+
+    /**
+     * 
+     */
+    const clickSelectUserItem = () => {
+      if (!currentUser.value) return
+      router.push(`/user/${currentUser.value.uname}/submit`)
+    }
+
+    /**
+     * Postを作成する。
+     * parameterがuserだった場合はpostのtypeをuserとして作成。
+     */
     const createPost = async () => {
-      console.log(route.value.name === USER_SUBMIT_ROUTE)
       if (route.value.name === USER_SUBMIT_ROUTE) {
         post.value.type = 'user'
       }
       await $axios.post('/posts', { post: post.value, post_image: postImage.value })
+      router.push('/')
     }
 
+    const updatePost = async (postPublic: boolean) => {
+      if (route.value.name === USER_SUBMIT_ROUTE) {
+        post.value.type = 'user'
+      }
+      if (postPublic) {
+        post.value.status = 'public'
+        try {
+          await $axios.put(`/account/posts/${route.value.query.draft}`, { post: post.value, post_image: postImage.value })
+          router.push('/')
+        } catch (e) {
+          post.value.status = 'draft'
+        }
+      }
+    }
+
+    /**
+     * DraftPostを作成する。作成後は作成したPostのIDを持つqueryを付与する。
+     */
     const createDraftPost = async () => {
       post.value.status = 'draft'
       const response = await $axios.post('/posts', { post: post.value, post_image: postImage.value })
@@ -394,6 +444,7 @@ export default defineComponent({
       draftPosts,
       isParameter,
       currentUser,
+      checkIsQueryDraftPost,
       clickSelectUserItem,
       getDraftPosts,
       selectDraftPosr,
@@ -401,6 +452,7 @@ export default defineComponent({
       imageMouseLeave,
       btnclick,
       createPost,
+      updatePost,
       createDraftPost,
       imageUpload,
       deleteImage,
