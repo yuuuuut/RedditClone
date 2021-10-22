@@ -26,6 +26,7 @@
 
 <script lang="ts">
 import { defineComponent, onMounted, onUnmounted, ref } from '@vue/composition-api'
+import { Pagination } from '~/types/pagination'
 import { PostData } from '~/types/post'
 import { $axios } from '~/utils/api'
 
@@ -34,6 +35,14 @@ export default defineComponent({
     const root = ref<HTMLElement | null>(null)
 
     const posts = ref<PostData[]>([])
+    const pagination = ref<Pagination>({
+      currentPage: 1,
+      limitValue: null,
+      nextPage: null,
+      prevPage: null,
+      totalCount: null,
+      totalPages: 1
+    })
 
     onMounted(async () => {
       window.addEventListener("scroll", handleScroll)
@@ -45,12 +54,16 @@ export default defineComponent({
       window.removeEventListener("scroll", handleScroll)
     })
 
-    const handleScroll = () => {
+    const handleScroll = async () => {
+      if (!pagination.value.nextPage && pagination.value.currentPage !== 1) return
+
       const elm = root.value as HTMLElement
       if (elm.getBoundingClientRect().bottom < window.innerHeight) {
-        console.log('OK')
+        pagination.value.currentPage += 1
+        const response = await $axios.get(`/posts`, { params: { page: pagination.value.currentPage }})
+        posts.value.push(...response.data.posts)
+        pagination.value = response.data.pagination
       }
-      console.log(root.value.getBoundingClientRect())
     }
 
     return {

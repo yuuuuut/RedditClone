@@ -22,3 +22,5 @@ json.posts do
     end
   end
 end
+
+json.pagination @pagination
