@@ -23,6 +23,7 @@ export const accessor: Plugin = ({ $axios, $cookies, store, redirect, error }): 
   })
 
   $axios.onError((axiosError: AxiosError) => {
+    $cookies.remove('post-value')
     const response = axiosError.response
     const status = response?.status ?? 500
 

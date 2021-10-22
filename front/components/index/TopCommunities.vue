@@ -14,6 +14,5 @@
   width: 100%;
   height: 200px;
   background-color: blue;
-  margin-top: 24px;
 }
 </style>

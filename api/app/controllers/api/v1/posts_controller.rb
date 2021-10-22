@@ -1,9 +1,11 @@
 class Api::V1::PostsController < Api::V1::ApplicationController
   before_action :authenticate_user!
 
+  include Pagination
+
   def index
-    puts current_user
-    @posts = [{ id: 1, title: 'Test1' }]
+    @posts = Post.all.page(params[:page]).per(3)
+    @pagination = resources_with_pagination(@posts)
   end
 
   def create

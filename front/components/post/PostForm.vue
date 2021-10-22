@@ -33,13 +33,13 @@
           </div>
           <v-divider />
           <v-card-text class="draft-post__item">
-            <div v-for="post in draftPosts" :key="post.id">
-              <div class="py-1 px-2" @click="selectDraftPosr(post.id)">
-                <div>{{ post.title }}</div>
+            <div v-for="p in draftPosts" :key="p.post.id">
+              <div class="py-1 px-2" @click="selectDraftPosr(p.post.id)">
+                <div>{{ p.post.title }}</div>
                 <div class="d-flex">
-                  <div class="draft-post__sub-text">{{ post.user.uname }}</div>
+                  <div class="draft-post__sub-text">{{ p.user.uname }}</div>
                   <div class="draft-post__sub-text mx-1">・</div>
-                  <div class="draft-post__sub-text">Draft saved {{ post.created_at }}</div>
+                  <div class="draft-post__sub-text">Draft saved {{ p.post.createdAt }}</div>
                 </div>
               </div>
               <v-divider />
@@ -111,7 +111,7 @@
       </v-tabs>
       <v-tabs-items v-model="tab" class="pa-3">
         <v-tab-item
-          v-for="(tab, i) in tabs"
+          v-for="(t, i) in tabs"
           :key="i"
           :value="'tab-' + String((Number(i) + 1))"
           :transition="false"
@@ -124,7 +124,7 @@
               outlined
               class="mb-2"
             />
-            <div v-if="tab === 'POST'">
+            <div v-if="t === 'POST'">
               <v-textarea
                 v-model="post.text"
                 placeholder="Text(optional)"
@@ -132,7 +132,7 @@
                 outlined
               />
             </div>
-            <div v-if="tab === 'IMAGE'">
+            <div v-if="t === 'IMAGE'">
               <div class="image-area">
                 <div v-if="!post.postImage.url" class="image-area__inner">
                     <v-file-input
@@ -163,7 +163,7 @@
                 </div>
               </div>
             </div>
-            <div v-if="tab === 'LINK'">
+            <div v-if="t === 'LINK'">
               <v-text-field
                 v-model="post.url"
                 placeholder="Url"
@@ -227,7 +227,8 @@ import { computed, defineComponent, onBeforeUnmount, onMounted, ref, useContext,
 import { deleteObject, getDownloadURL, ref as r, uploadBytesResumable } from 'firebase/storage'
 import { storage } from "~/plugins/firebase"
 import { userStore } from "~/store"
-import { UserType } from "~/store/user"
+import { PostData, Post } from "~/types/post"
+import { UserPost } from "~/types/user"
 import { $axios } from "~/utils/api"
 
 export default defineComponent({
@@ -242,16 +243,18 @@ export default defineComponent({
     const tabs = ref(['POST', 'IMAGE', 'LINK'])
     const draftDialog = ref(false)
     const isImageHover = ref(false)
-    const draftPosts = ref([])
+    const draftPosts = ref<PostData[]>([])
     const isDraftPostsLoad = ref(true)
-    const post = ref({
+    const post = ref<Post>({
+      id: 0,
       title: '',
       text: '',
       url: '',
       spoiler: false,
       nsfw: false,
       status: "public",
-      type: 'none',
+      type: "none",
+      createdAt: null,
       postImage: {
         uid: '',
         url: ''
@@ -330,12 +333,13 @@ export default defineComponent({
      */
     const checkIsQueryDraftPost = () => {
       const draftPost = draftPosts.value.find(p => {
-        return String(p.id) === route.value.query.draft
+        return String(p.post.id) === route.value.query.draft
       })
-      if (!draftPost) error({ statusCode: 404 })
-      post.value = draftPost
-      console.log(post.value)
-      console.log(post.value.post_image)
+      if (!draftPost){
+        error({ statusCode: 404 })
+        return
+      }
+      post.value = draftPost.post
     }
 
     /**
@@ -360,7 +364,7 @@ export default defineComponent({
       if (!response.data) return
       post.value = response.data.post
       draftDialog.value = false
-      changePostTyprRouterPush(response.data.user, response.data.post)
+      changePostTyprRouterPush(response.data.post, response.data.user)
     }
 
     /**
@@ -384,7 +388,7 @@ export default defineComponent({
       }
     }
 
-    const changePostTyprRouterPush = (user: UserType, post: any) => {
+    const changePostTyprRouterPush = (post: Post, user: UserPost) => {
       if (post.type === 'user') {
         router.push(`/user/${user.uname}/submit?draft=${post.id}`)
       } else {
@@ -410,9 +414,9 @@ export default defineComponent({
         if (!postPublic) {
           post.value = response.data.post
           draftPosts.value = draftPosts.value.filter(p => {
-            return p.id !== response.data.post.id
+            return p.post.id !== response.data.post.id
           })
-          draftPosts.value.push(post.value)
+          draftPosts.value.push({ post: post.value, user: response.data.user })
         } else {
           router.push('/')
         }
@@ -430,7 +434,7 @@ export default defineComponent({
       const response = await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
       const resPost = response.data.post
       draftPosts.value.push(resPost)
-      changePostTyprRouterPush(response.data.user, resPost)
+      changePostTyprRouterPush(resPost, response.data.user)
     }
 
     const imageUpload = async (file: Blob) => {
@@ -444,13 +448,11 @@ export default defineComponent({
         const url = await getDownloadURL(storageRef)
         post.value.postImage.url = url
       } catch (e) {
-        console.log(e)
         post.value.postImage.url = ''
       }
     }
 
     const deleteImage = async () => {
-      console.log(post)
       await $axios.$delete(`/post_images/${post.value.postImage.uid}`).then(async () => {
         const storageRef = r(storage, `images/${post.value.postImage.uid}`)
         await deleteObject(storageRef)
@@ -458,14 +460,6 @@ export default defineComponent({
         post.value.postImage.url = ''
       })
     }
-
-    // const deleteFirabaseImage = async () => {
-    //           const storageRef = r(storage, `images/${post.value.postImage.uid}`)
-    //     await deleteObject(storageRef)
-    //     post.value.postImage.uid = ''
-    //     post.value.postImage.url = ''
-    //     post.value.postImage.id = ''
-    // }
 
     return {
       tab,
