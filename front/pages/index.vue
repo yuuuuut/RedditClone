@@ -1,7 +1,10 @@
 <template>
   <div>
     <TrendingToday />
-    <v-row class="grey lighten-3" no-gutters>
+    <v-row no-gutters>
+      <v-col cols="12">
+        <div class="popular-title">Popular posts</div>
+      </v-col>
       <PopularPosts />
       <TopCommunities />
     </v-row>
@@ -24,3 +27,10 @@ export default defineComponent({
   }
 })
 </script>
+
+<style lang="scss" scoped>
+.popular-title {
+  margin-bottom: 10px;
+  font-size: 15px;
+}
+</style>

@@ -1,46 +1,44 @@
 <template>
-  <v-col ref="root" cols="8" style="background-color: #FFCDD2">
-    Popular posts
-    <div class="a">
-      <v-card class="card" outlined>
-        <div class="d-flex">
-          <div style="width: 10%; background: green;">
-            a
+  <v-col ref="root" cols="8">
+    <div class="main">
+      <v-card class="filter-card" outlined>
+        <div class="filter-card__items">
+          <div class="filter-card__item">
+            <v-icon class="mr-1">mdi-fire</v-icon>
+            <div>Hot</div>
           </div>
-          <div style="width: 90%; background: blue;">
-            <div class="d-flex justify-space-between">
-              <div class="d-flex">
-                <v-avatar
-                  color="primary"
-                  size="19"
-                ></v-avatar>
-                <div>test name</div>
-                <div>Posted byu/MeruMSB 6 months ago</div>
-              </div>
-              <div>
-                <div>Join</div>
-              </div>
-            </div>
-            <div>
-              本文
-            </div>
+          <div class="filter-card__item">
+            <v-icon class="mr-1">mdi-decagram</v-icon>
+            <div>New</div>
+          </div>
+          <div class="filter-card__item">
+            <v-icon class="mr-1">mdi-arrow-up-thick</v-icon>
+            <div>Top</div>
           </div>
         </div>
       </v-card>
-      <v-card class="card" outlined></v-card>
+      <div v-for="post in posts" :key="post.post.id" class="mb-3">
+        <Post :post="post" />
+      </div>
     </div>
   </v-col>
 </template>
 
 <script lang="ts">
 import { defineComponent, onMounted, onUnmounted, ref } from '@vue/composition-api'
+import { PostData } from '~/types/post'
+import { $axios } from '~/utils/api'
 
 export default defineComponent({
   setup() {
-    const root = ref(null)
+    const root = ref<HTMLElement | null>(null)
 
-    onMounted(() => {
+    const posts = ref<PostData[]>([])
+
+    onMounted(async () => {
       window.addEventListener("scroll", handleScroll)
+      const response = await $axios.get('/posts')
+      posts.value.push(...response.data.posts)
     })
 
     onUnmounted(() => {
@@ -48,7 +46,7 @@ export default defineComponent({
     })
 
     const handleScroll = () => {
-      const elm = root.value
+      const elm = root.value as HTMLElement
       if (elm.getBoundingClientRect().bottom < window.innerHeight) {
         console.log('OK')
       }
@@ -56,19 +54,33 @@ export default defineComponent({
     }
 
     return {
-      root
+      root,
+      posts
     }
   }
 })
 </script>
 
 <style lang="scss" scoped>
-.a {
+.main {
   width: 97%;
-  background-color: red;
 }
 
-.card {
-  height: 500px;
+.filter-card {
+  height: 58px;
+  margin-bottom: 20px;
+}
+
+.filter-card__items {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px;
+  width: 250px;
+}
+
+.filter-card__item {
+  display: flex;
+  align-items: center;
+  color: rgb(120, 124, 126);
 }
 </style>
