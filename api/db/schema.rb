@@ -10,7 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_10_14_125126) do
+ActiveRecord::Schema.define(version: 2021_10_22_103752) do
+
+  create_table "communities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "name"
+    t.text "description"
+    t.string "main_image"
+    t.string "header_image"
+    t.string "color"
+    t.integer "limitation", default: 0
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["limitation"], name: "index_communities_on_limitation"
+  end
 
   create_table "post_images", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "post_id"
@@ -30,9 +42,20 @@ ActiveRecord::Schema.define(version: 2021_10_14_125126) do
     t.integer "status", default: 0
     t.integer "type", default: 0
     t.bigint "user_id"
+    t.bigint "community_id"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.index ["community_id"], name: "index_posts_on_community_id"
     t.index ["user_id"], name: "index_posts_on_user_id"
+  end
+
+  create_table "user_communities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id"
+    t.bigint "community_id"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["community_id"], name: "index_user_communities_on_community_id"
+    t.index ["user_id", "community_id"], name: "index_user_communities_on_user_id_and_community_id", unique: true
   end
 
   create_table "users", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -60,6 +83,7 @@ ActiveRecord::Schema.define(version: 2021_10_14_125126) do
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["uid", "provider"], name: "index_users_on_uid_and_provider", unique: true
+    t.index ["uname"], name: "index_users_on_uname", unique: true
   end
 
 end

@@ -401,6 +401,7 @@ export default defineComponent({
      * parameterがuserだった場合はpostのtypeをuserとして作成。
      */
     const createPost = async () => {
+      console.log('OK')
       changePostType()
       await $axios.post('/posts', { post: post.value })
       router.push('/')

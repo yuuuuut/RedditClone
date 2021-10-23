@@ -2,6 +2,7 @@ class Post < ApplicationRecord
   self.inheritance_column = :_type_disabled
 
   belongs_to :user
+  belongs_to :community, optional: true
   has_one :post_image
 
   enum status: { draft: 0, public: 1 }, _prefix: true
