@@ -26,8 +26,8 @@ class User < ActiveRecord::Base
     communities << community
   end
 
-  def disjoin_community(community)
-    communities.destroy!(community)
+  def leave_community(community)
+    communities.delete(community)
   end
 
   def joined_community?(community)

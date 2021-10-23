@@ -25,11 +25,23 @@
               </div>
               <div class="mt-1">
                 <v-btn
+                  v-if="!community.isJoin"
                   rounded
                   color="primary"
                   width="100"
+                  @click="joinCommunity"
                 >
                   Join
+                </v-btn>
+                <v-btn
+                  v-else
+                  rounded
+                  outlined
+                  color="primary"
+                  width="100"
+                  @click="leaveCommunity"
+                >
+                  Leave
                 </v-btn>
               </div>
             </div>
@@ -57,13 +69,28 @@ export default defineComponent({
       console.log(response)
     })
 
-    const joinCom = async () => {
-      const response = await $axios.post('/account/communities', { community_id: route.value.params.name })
+    const joinCommunity = async () => {
+      try {
+        const response = await $axios.post('/account/communities', { community_id: route.value.params.name })
+        community.value.isJoin = true
+      } catch (e) {
+
+      }
+    }
+
+    const leaveCommunity = async () => {
+      try {
+        const response = await $axios.delete(`/account/communities/${route.value.params.name}`)
+        community.value.isJoin = false
+      } catch (e) {
+
+      }
     }
 
     return {
       community,
-      joinCom
+      joinCommunity,
+      leaveCommunity
     }
   }
 })
