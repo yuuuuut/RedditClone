@@ -3,24 +3,26 @@
     <div class="name">Trending today</div>
     <div class="d-flex justify-space-between">
       <div v-for="community in communities" :key="community.id" class="post-image__wrap">
-        <v-img :src="community.mainImage" class="post-image" />
-        <div class="post-image__name">
-          {{ community.name }}
-        </div>
-        <div class="post-image__describe">
-          {{ community.description }}
-        </div>
-        <div class="post-image__community-wrap">
-          <v-avatar
-            color="primary"
-            size="19"
-          >
-            <v-img src="https://firebasestorage.googleapis.com/v0/b/redditclone-16a84.appspot.com/o/images%2F16349048489070?alt=media&token=5ed7d2a8-6dda-430f-8c62-9ba7ca166b3b" />
-          </v-avatar>
-          <div class="post-image__community-name">
-            r/news and more
+        <NuxtLink :to="`/r/${community.name}`">
+          <v-img :src="community.mainImage" class="post-image" />
+          <div class="post-image__name">
+            {{ community.name }}
           </div>
-        </div>
+          <div class="post-image__describe">
+            {{ community.description }}
+          </div>
+          <div class="post-image__community-wrap">
+            <v-avatar
+              color="primary"
+              size="19"
+            >
+              <v-img src="https://firebasestorage.googleapis.com/v0/b/redditclone-16a84.appspot.com/o/images%2F16349048489070?alt=media&token=5ed7d2a8-6dda-430f-8c62-9ba7ca166b3b" />
+            </v-avatar>
+            <div class="post-image__community-name">
+              r/news and more
+            </div>
+          </div>
+        </NuxtLink>
       </div>
     </div>
   </div>

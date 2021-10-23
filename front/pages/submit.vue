@@ -1,9 +1,11 @@
 <template>
-  <v-row no-gutters>
-    <v-col cols="10">
-      <PostForm />
-    </v-col>
-  </v-row>
+  <v-container>
+    <v-row no-gutters>
+      <v-col cols="10">
+        <PostForm />
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script lang="ts">

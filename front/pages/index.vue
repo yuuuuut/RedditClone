@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <v-container>
     <TrendingToday />
     <v-row no-gutters>
       <v-col cols="12">
@@ -8,7 +8,7 @@
       <PopularPosts />
       <TopCommunities />
     </v-row>
-  </div>
+  </v-container>
 </template>
 
 <script lang="ts">

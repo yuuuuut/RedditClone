@@ -1,20 +1,59 @@
 <template>
-  <div @click="joinCom">
-    Com
+  <div>
+    <div class="community-header__image">
+      <v-img :src="community.headerImage" class="community-header__image" />
+    </div>
+    <div class="community-subheader">
+      <div class="community-subheader__content">
+        <v-row no-gutters>
+          <v-col cols="2">
+            <div class="community-subheader__icon">
+              <div class="community-subheader__icon-cover">
+                <v-img :src="community.mainImage" class="icon-image"/>
+              </div>
+            </div>
+          </v-col>
+          <v-col cols="10">
+            <div class="d-flex justify-space-between">
+              <div>
+                <div class="community-subheader__name">
+                  {{ community.name }}
+                </div>
+                <div class="community-subheader__subname">
+                  r/{{ community.name }}
+                </div>
+              </div>
+              <div class="mt-1">
+                <v-btn
+                  rounded
+                  color="primary"
+                  width="100"
+                >
+                  Join
+                </v-btn>
+              </div>
+            </div>
+          </v-col>
+        </v-row>
+      </div>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import { useRoute } from '@nuxtjs/composition-api'
-import { defineComponent, onMounted } from '@vue/composition-api'
+import { defineComponent, onMounted, ref } from '@vue/composition-api'
 import { $axios } from '~/utils/api'
 
 export default defineComponent({
   setup() {
     const route = useRoute()
 
+    const community = ref({})
+
     onMounted(async () => {
       const response = await $axios.get(`communities/${route.value.params.name}`)
+      community.value = response.data.community
       console.log(response)
     })
 
@@ -23,8 +62,67 @@ export default defineComponent({
     }
 
     return {
+      community,
       joinCom
     }
   }
 })
 </script>
+
+<style lang="scss" scoped>
+.container {
+  max-width: 850px !important;
+  padding: 0;
+  background: red;
+  padding-top: 10px;
+}
+
+.community-header__image {
+  height: 250px;
+  width: 100%;
+}
+
+.community-subheader {
+  background: white;
+  width: 100%;
+  height: 100px;
+}
+
+.community-subheader__content {
+  width: 850px;
+  margin: 0 auto;
+  height: 100%;
+}
+
+.community-subheader__icon {
+  position: relative;
+}
+
+.community-subheader__icon-cover {
+  position:  absolute;
+  border-radius: 50%;
+  width: 86px;
+  height: 86px;
+  background: white;
+  top: -30px;
+  left: 30px;
+}
+
+.icon-image {
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  background: white;
+  margin: 3px;
+}
+
+.community-subheader__name {
+  font-weight: bold;
+  font-size: 28px;
+}
+
+.community-subheader__subname {
+  font-size: 14px;
+  color: rgb(120, 124, 126);
+}
+</style>
