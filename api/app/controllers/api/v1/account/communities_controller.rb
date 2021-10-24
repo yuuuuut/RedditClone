@@ -1,6 +1,10 @@
 class Api::V1::Account::CommunitiesController < Api::V1::ApplicationController
   before_action :authenticate_user!
 
+  def index
+    @communities = current_user.communities
+  end
+
   def create
     @community = Community.find_by(name: params[:community_id])
     current_user.join_community(@community)

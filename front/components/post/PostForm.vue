@@ -76,7 +76,7 @@
           </div>
         </template>
         <div>
-          <div class="select-menu__user">
+          <div class="select-menu">
             <div class="select-menu__item-title">your profile</div>
             <div
               v-if="currentUser"
@@ -87,6 +87,20 @@
                 <v-img :src="currentUser.image" />
               </v-avatar>
               <div>user/{{ currentUser.uname }}</div>
+            </div>
+          </div>
+          <div v-if="communities.length" class="select-menu">
+            <div class="select-menu__item-title">my communities</div>
+            <div
+              v-for="c in communities"
+              :key="c.name"
+              class="select-menu__item"
+              @click="clickSelectCommunityItem(c.name)"
+            >
+              <v-avatar class="mr-3" size="40">
+                <v-img :src="c.mainImage" />
+              </v-avatar>
+              <div>r/{{ c.name }}</div>
             </div>
           </div>
         </div>
@@ -223,7 +237,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onBeforeUnmount, onMounted, ref, useContext, useRoute, useRouter } from "@nuxtjs/composition-api"
+import { computed, defineComponent, onBeforeUnmount, onDeactivated, onMounted, ref, useContext, useRoute, useRouter } from "@nuxtjs/composition-api"
 import { deleteObject, getDownloadURL, ref as r, uploadBytesResumable } from 'firebase/storage'
 import { storage } from "~/plugins/firebase"
 import { userStore } from "~/store"
@@ -231,9 +245,13 @@ import { PostData, Post } from "~/types/post"
 import { UserPost } from "~/types/user"
 import { $axios } from "~/utils/api"
 
+let cashPost: Post | null = null
+
 export default defineComponent({
   setup() {
+    const ROOT_SUBMIT_ROUTE = 'submit'
     const USER_SUBMIT_ROUTE = 'user-name-submit'
+    const COMMUNITY_SUBMIT_ROUTE = 'r-name-submit'
 
     const { error } = useContext()
     const route = useRoute()
@@ -245,6 +263,7 @@ export default defineComponent({
     const isImageHover = ref(false)
     const draftPosts = ref<PostData[]>([])
     const isDraftPostsLoad = ref(true)
+    const communities = ref([])
     const post = ref<Post>({
       id: 0,
       title: '',
@@ -261,12 +280,17 @@ export default defineComponent({
       }
     })
 
+    onDeactivated(() => {
+      cashPost = post.value as Post
+    })
+
     /**
      * Computed
      */
     const isParameter = computed(() => {
       const name = route.value.name
       if (name === USER_SUBMIT_ROUTE) return true
+      if (name === COMMUNITY_SUBMIT_ROUTE) return true
       return false
     })
     const isDraftQuery = computed(() => {
@@ -281,16 +305,14 @@ export default defineComponent({
      * Mounted
      */
     onMounted(async () => {
+      getCurrentUserCommunities()
       await getDraftPosts()
 
       if (route.value.query.draft) {
         checkIsQueryDraftPost()
       }
-
-      const postData = localStorage.getItem('post-value')
-      if (postData) {
-        post.value = JSON.parse(localStorage.getItem('post-value')!)
-        localStorage.removeItem('post-value')
+      if (cashPost) {
+        post.value = cashPost
       }
     })
 
@@ -298,14 +320,14 @@ export default defineComponent({
      * Unmount
      */
     onBeforeUnmount(() => {
-      if (route.value.name === USER_SUBMIT_ROUTE ||
-          route.value.name === 'submit'
-      ) {
-        if (post.value) {
-          localStorage.setItem('post-value',  JSON.stringify(post.value))
-        }
-      }
+      const routeName = route.value.name
+      if (routeName === USER_SUBMIT_ROUTE ||
+          routeName === COMMUNITY_SUBMIT_ROUTE ||
+          routeName === ROOT_SUBMIT_ROUTE
+      ) return
+      cashPost = null
     })
+
 
     /**
      * Methods
@@ -325,6 +347,15 @@ export default defineComponent({
 
     const imageMouseLeave = () => {
       isImageHover.value = false
+    }
+
+    const getCurrentUserCommunities = async () => {
+      try {
+        const response = await $axios.get('account/communities')
+        communities.value.push(...response.data.communities)
+      } catch (e) {
+
+      }
     }
 
     /**
@@ -380,6 +411,15 @@ export default defineComponent({
       }
     }
 
+    const clickSelectCommunityItem = (name: string) => {
+      const draftId = route.value.query.draft
+      if (draftId) {
+        router.push(`/r/${name}/submit?draft=${draftId}`)
+      } else {
+        router.push(`/r/${name}/submit`)
+      }
+    }
+
     const changePostType = () => {
       if (route.value.name === USER_SUBMIT_ROUTE) {
         post.value.type = 'user'
@@ -401,7 +441,6 @@ export default defineComponent({
      * parameterがuserだった場合はpostのtypeをuserとして作成。
      */
     const createPost = async () => {
-      console.log('OK')
       changePostType()
       await $axios.post('/posts', { post: post.value })
       router.push('/')
@@ -467,6 +506,7 @@ export default defineComponent({
       tabs,
       draftDialog,
       post,
+      communities,
       isImageHover,
       isDraftQuery,
       draftPosts,
@@ -474,6 +514,7 @@ export default defineComponent({
       currentUser,
       checkIsQueryDraftPost,
       clickSelectUserItem,
+      clickSelectCommunityItem,
       getDraftPosts,
       selectDraftPosr,
       imageMouseOver,
@@ -555,7 +596,7 @@ export default defineComponent({
   color: #8d8d8d;
 }
 
-.select-menu__user {
+.select-menu {
   border-bottom: 1px solid #dae0e6;
   padding: 15px;
 }

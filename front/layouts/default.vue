@@ -138,9 +138,7 @@
       </div>
     </v-app-bar>
     <v-main class="main">
-      
-        <Nuxt />
-
+      <Nuxt />
     </v-main>
     <v-dialog
       v-if="currentUser"

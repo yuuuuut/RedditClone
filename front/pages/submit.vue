@@ -2,7 +2,9 @@
   <v-container>
     <v-row no-gutters>
       <v-col cols="10">
-        <PostForm />
+        <keep-alive>
+          <PostForm />
+        </keep-alive>
       </v-col>
     </v-row>
   </v-container>
@@ -16,14 +18,6 @@ export default defineComponent({
   components: {
     PostForm
   },
-  // beforeRouteLeave(to, from, next) {
-  //   // this.test()
-  //   if (to.name !== "r-name-submit") {
-  //     localStorage.removeItem('post-value')
-  //     localStorage.removeItem('post-image')
-  //   }
-  //   next()
-  // },
   setup() {
   }
 })

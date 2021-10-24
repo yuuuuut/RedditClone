@@ -1,5 +1,6 @@
 <template>
-  <div>
+  <nuxt-child v-if="!is" />
+  <div v-else>
     <div class="community-header__image">
       <v-img :src="community.headerImage" class="community-header__image" />
     </div>
@@ -54,7 +55,7 @@
 
 <script lang="ts">
 import { useRoute } from '@nuxtjs/composition-api'
-import { defineComponent, onMounted, ref } from '@vue/composition-api'
+import { computed, defineComponent, onMounted, ref } from '@vue/composition-api'
 import { $axios } from '~/utils/api'
 
 export default defineComponent({
@@ -63,7 +64,12 @@ export default defineComponent({
 
     const community = ref({})
 
+    const is =  computed(() => {
+      return route.value.name === 'r-name'
+    })
+
     onMounted(async () => {
+      console.log(route.value.name)
       const response = await $axios.get(`communities/${route.value.params.name}`)
       community.value = response.data.community
       console.log(response)
@@ -90,20 +96,14 @@ export default defineComponent({
     return {
       community,
       joinCommunity,
-      leaveCommunity
+      leaveCommunity,
+      is
     }
   }
 })
 </script>
 
 <style lang="scss" scoped>
-.container {
-  max-width: 850px !important;
-  padding: 0;
-  background: red;
-  padding-top: 10px;
-}
-
 .community-header__image {
   height: 250px;
   width: 100%;
