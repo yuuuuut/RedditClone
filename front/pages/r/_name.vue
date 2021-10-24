@@ -69,10 +69,13 @@ export default defineComponent({
     })
 
     onMounted(async () => {
-      console.log(route.value.name)
-      const response = await $axios.get(`communities/${route.value.params.name}`)
-      community.value = response.data.community
-      console.log(response)
+      console.log(route)
+      if (route.value.name !== 'r-name-submit') {
+        console.log('OK')
+        const response = await $axios.get(`communities/${route.value.params.name}`)
+        community.value = response.data.community
+        console.log(response)
+      }
     })
 
     const joinCommunity = async () => {

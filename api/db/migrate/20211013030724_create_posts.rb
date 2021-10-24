@@ -9,7 +9,7 @@ class CreatePosts < ActiveRecord::Migration[6.1]
       t.integer :status, default: 0
       t.integer :type, default: 0
       t.references :user, index: true
-      t.references :community, index: true
+      t.references :community, index: true, type: :string
 
       t.timestamps
     end

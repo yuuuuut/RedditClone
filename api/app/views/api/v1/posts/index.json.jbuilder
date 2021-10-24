@@ -9,6 +9,7 @@ json.posts do
       json.spoiler post.spoiler
       json.nsfw post.nsfw
       json.type post.type
+      json.communityId post.community_id
       json.postImage do
         json.uid post.post_image.present? ? post.post_image.uid : ''
         json.url post.post_image.present? ? post.post_image.url : ''

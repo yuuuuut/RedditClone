@@ -58,17 +58,25 @@
             v-on="on"
           >
             <v-avatar
-              v-if="isParameter && currentUser"
+              v-if="isParameter && !firstLoad"
               class="mr-3"
               size="25"
             >
-              <v-img :src="currentUser.image" />
+              <template v-if="parameterType === 'user'">
+                <v-img :src="currentUser.image" />
+              </template>
+              <template v-if="parameterType === 'r'">
+                <v-img :src="currentCommunity.mainImage" />
+              </template>
             </v-avatar>
             <div v-else class="not-avatar mr-3" />
-            <div
-              v-if="isParameter && currentUser"
-            >
-              {{ currentUser.uname }}
+            <div v-if="!firstLoad && isParameter">
+              <div v-if="parameterType === 'user'">
+                user/{{ currentUser.uname }}
+              </div>
+              <div v-if="parameterType === 'r'">
+                r/{{ currentCommunity.name }}
+              </div>
             </div>
             <div v-else>
               Choose a community
@@ -228,7 +236,10 @@
         <v-chip v-else :disabled="!post.title" color="primary" class="mr-3" @click="createDraftPost">
           SAVE DRAFT
         </v-chip>
-        <v-chip color="black" text-color="white" :disabled="!isParameter" @click="isDraftQuery.isQuery ? updatePost(true) : createPost">
+        <v-chip v-if="isDraftQuery.isQuery" color="black" text-color="white" :disabled="!isParameter || !post.title" @click="updatePost(true)">
+          POST
+        </v-chip>
+        <v-chip v-else color="black" text-color="white" :disabled="!isParameter || !post.title" @click="createPost">
           POST
         </v-chip>
       </div>
@@ -252,11 +263,17 @@ export default defineComponent({
     const ROOT_SUBMIT_ROUTE = 'submit'
     const USER_SUBMIT_ROUTE = 'user-name-submit'
     const COMMUNITY_SUBMIT_ROUTE = 'r-name-submit'
+    const POST_TYPE = {
+      none: 'none',
+      user: 'user',
+      community: 'community'
+    } as const
 
     const { error } = useContext()
     const route = useRoute()
     const router = useRouter()
 
+    const firstLoad = ref(true)
     const tab = ref(null)
     const tabs = ref(['POST', 'IMAGE', 'LINK'])
     const draftDialog = ref(false)
@@ -273,6 +290,7 @@ export default defineComponent({
       nsfw: false,
       status: "public",
       type: "none",
+      communityId: '',
       createdAt: null,
       postImage: {
         uid: '',
@@ -293,6 +311,12 @@ export default defineComponent({
       if (name === COMMUNITY_SUBMIT_ROUTE) return true
       return false
     })
+    const parameterType = computed(() => {
+      const name = route.value.name
+      if (name === USER_SUBMIT_ROUTE) return 'user'
+      if (name === COMMUNITY_SUBMIT_ROUTE) return 'r'
+      return 'none'
+    })
     const isDraftQuery = computed(() => {
       const r = route.value.query.draft
       return r ? { isQuery: true, draftId: r } : { isQuery: false, draftId: '' }
@@ -300,12 +324,19 @@ export default defineComponent({
     const currentUser = computed(() => {
       return userStore.currentUser
     })
+    const currentCommunity = computed(() => {
+      const paramValue = route.value.params.name
+      const community = communities.value.find(c => {
+        return c.name === paramValue
+      })
+      return community
+    })
 
     /**
      * Mounted
      */
     onMounted(async () => {
-      getCurrentUserCommunities()
+      await getCurrentUserCommunities()
       await getDraftPosts()
 
       if (route.value.query.draft) {
@@ -314,6 +345,7 @@ export default defineComponent({
       if (cashPost) {
         post.value = cashPost
       }
+      firstLoad.value = false
     })
 
     /**
@@ -412,6 +444,7 @@ export default defineComponent({
     }
 
     const clickSelectCommunityItem = (name: string) => {
+      console.log(name)
       const draftId = route.value.query.draft
       if (draftId) {
         router.push(`/r/${name}/submit?draft=${draftId}`)
@@ -420,19 +453,37 @@ export default defineComponent({
       }
     }
 
+    /**
+     * ParameterでPostのTypeを判定してセットする。
+     */
     const changePostType = () => {
-      if (route.value.name === USER_SUBMIT_ROUTE) {
-        post.value.type = 'user'
-      } else {
-        post.value.type = 'none'
+      switch (route.value.name) {
+        case USER_SUBMIT_ROUTE:
+          post.value.type = POST_TYPE.user
+          break
+        case COMMUNITY_SUBMIT_ROUTE:
+          post.value.type = POST_TYPE.community
+          break
+        default:
+          post.value.type = POST_TYPE.none
+          break
       }
     }
 
+    /**
+     * ParameterでPostのTypeを判定して遷移先を変える。
+     */
     const changePostTyprRouterPush = (post: Post, user: UserPost) => {
-      if (post.type === 'user') {
-        router.push(`/user/${user.uname}/submit?draft=${post.id}`)
-      } else {
-        router.push(`/submit?draft=${post.id}`)
+      switch (post.type) {
+        case POST_TYPE.user:
+          router.push(`/user/${user.uname}/submit?draft=${post.id}`)
+          break
+        case POST_TYPE.community:
+          router.push(`/r/${post.communityId}/submit?draft=${post.id}`)
+          break
+        default:
+          router.push(`/submit?draft=${post.id}`)
+          break
       }
     }
 
@@ -442,7 +493,7 @@ export default defineComponent({
      */
     const createPost = async () => {
       changePostType()
-      await $axios.post('/posts', { post: post.value })
+      await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
       router.push('/')
     }
 
@@ -450,7 +501,13 @@ export default defineComponent({
       changePostType()
       post.value.status = (postPublic) ? 'public' : 'draft'
       try {
-        const response = await $axios.put(`/account/posts/${route.value.query.draft}`, { post: post.value, post_image: post.value.postImage })
+        let response
+        if (post.value.type === 'community') {
+          response = await $axios.put(`/account/posts/${route.value.query.draft}?community_id=${route.value.params.name}`, { post: post.value, post_image: post.value.postImage })
+        } else {
+          response = await $axios.put(`/account/posts/${route.value.query.draft}`, { post: post.value, post_image: post.value.postImage })
+        }
+        // const response = await $axios.put(`/account/posts/${route.value.query.draft}`, { post: post.value, post_image: post.value.postImage })
         if (!postPublic) {
           post.value = response.data.post
           draftPosts.value = draftPosts.value.filter(p => {
@@ -469,9 +526,14 @@ export default defineComponent({
      * DraftPostを作成する。作成後は作成したPostのIDを持つqueryを付与する。
      */
     const createDraftPost = async () => {
+      let response
       changePostType()
       post.value.status = 'draft'
-      const response = await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
+      if (post.value.type === 'community') {
+        response = await $axios.post(`/posts?community_id=${route.value.params.name}`, { post: post.value, post_image: post.value.postImage })
+      } else {
+        response = await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
+      }
       const resPost = response.data.post
       draftPosts.value.push(resPost)
       changePostTyprRouterPush(resPost, response.data.user)
@@ -502,6 +564,7 @@ export default defineComponent({
     }
 
     return {
+      firstLoad,
       tab,
       tabs,
       draftDialog,
@@ -512,6 +575,8 @@ export default defineComponent({
       draftPosts,
       isParameter,
       currentUser,
+      parameterType,
+      currentCommunity,
       checkIsQueryDraftPost,
       clickSelectUserItem,
       clickSelectCommunityItem,

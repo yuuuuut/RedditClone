@@ -12,8 +12,7 @@
 
 ActiveRecord::Schema.define(version: 2021_10_22_103752) do
 
-  create_table "communities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.string "name"
+  create_table "communities", primary_key: "name", id: :string, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.text "description"
     t.string "main_image"
     t.string "header_image"
@@ -42,7 +41,7 @@ ActiveRecord::Schema.define(version: 2021_10_22_103752) do
     t.integer "status", default: 0
     t.integer "type", default: 0
     t.bigint "user_id"
-    t.bigint "community_id"
+    t.string "community_id"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.index ["community_id"], name: "index_posts_on_community_id"
@@ -51,7 +50,7 @@ ActiveRecord::Schema.define(version: 2021_10_22_103752) do
 
   create_table "user_communities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "user_id"
-    t.bigint "community_id"
+    t.string "community_id"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.index ["community_id"], name: "index_user_communities_on_community_id"

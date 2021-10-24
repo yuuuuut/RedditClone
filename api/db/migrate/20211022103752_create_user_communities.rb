@@ -2,7 +2,7 @@ class CreateUserCommunities < ActiveRecord::Migration[6.1]
   def change
     create_table :user_communities do |t|
       t.references :user, index: false
-      t.references :community
+      t.references :community, type: :string
       t.timestamps
     end
 

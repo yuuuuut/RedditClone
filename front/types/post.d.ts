@@ -9,6 +9,7 @@ export interface Post {
   spoiler: boolean
   nsfw: boolean
   type: 'none' | 'user' | 'community'
+  communityId: string
   createdAt: Date | null
   postImage: {
     uid: string

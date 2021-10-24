@@ -8,6 +8,11 @@ class Post < ApplicationRecord
   enum status: { draft: 0, public: 1 }, _prefix: true
   enum type: { none: 0, user: 1, community: 2 }, _prefix: true
 
+  def create_community_if_exists(community_id)
+    community = Community.find_by(name: community_id)
+    self.update!(community: community) if community.present?
+  end
+
   def update_post_image(url, uid)
     post_image = PostImage.find_by(post: self)
     if (url.blank? || uid.blank?)
