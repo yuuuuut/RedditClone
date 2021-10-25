@@ -185,7 +185,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref, useRouter } from '@nuxtjs/composition-api'
+import { computed, defineComponent, onMounted, ref, useRouter } from '@nuxtjs/composition-api'
 import { userStore } from '@/plugins/store-accessor'
 import { Providers } from '~/store/user'
 import { $axios } from '~/utils/api'
@@ -197,6 +197,8 @@ export default defineComponent({
     const router = useRouter()
     const pattern = /^[0-9a-zA-Z]*$/
 
+    const on = ref<any>(null)
+    const attrs = ref<any>(null)
     const dialog = ref(false)
     const dialogTitle = ref<string>("")
     const uname = ref('')
@@ -206,7 +208,7 @@ export default defineComponent({
         return pattern.test(v) || 'Please enter only alphanumeric characters'
       }
     ])
-
+  
     const isCorrectUname = computed(() => {
       return !uname.value || !pattern.test(uname.value)
     })
@@ -252,6 +254,8 @@ export default defineComponent({
     }
 
     return {
+      on,
+      attrs,
       dialog,
       dialogTitle,
       uname,

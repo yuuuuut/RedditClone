@@ -49,16 +49,17 @@
       </v-dialog>
     </div>
     <v-divider class="divider" />
-    <div class="target-select">
+    <div v-if="!firstLoad" class="target-select">
       <v-menu offset-y>
-        <template #activator="{ on, attrs }">
+        <!-- eslint-disable-next-line vue/v-slot-style -->
+        <template v-slot:activator="{ on, attrs }">
           <div
             v-bind="attrs"
             class="target-select__content"
             v-on="on"
           >
             <v-avatar
-              v-if="isParameter && !firstLoad"
+              v-if="isParameter"
               class="mr-3"
               size="25"
             >
@@ -113,6 +114,9 @@
           </div>
         </div>
       </v-menu>
+    </div>
+    <div v-else class="target-select">
+      <div class="target-select__content" />
     </div>
     <v-card>
       <v-tabs
@@ -335,6 +339,10 @@ export default defineComponent({
       await getCurrentUserCommunities()
       await getDraftPosts()
 
+      setTimeout(() => {
+
+      }, 5000)
+
       if (route.value.query.draft) {
         checkIsQueryDraftPost()
       }
@@ -433,9 +441,11 @@ export default defineComponent({
       const draftId = route.value.query.draft
       if (!currentUser.value) return
       if (draftId) {
-        router.push(`/user/${currentUser.value.uname}/submit?draft=${draftId}`)
+        history.pushState({}, '', `/user/${currentUser.value.uname}/submit?draft=${draftId}`)
+        // router.push(`/user/${currentUser.value.uname}/submit?draft=${draftId}`)
       } else {
-        router.push(`/user/${currentUser.value.uname}/submit`)
+        history.pushState({}, '', `/user/${currentUser.value.uname}/submit`)
+        // router.push(`/user/${currentUser.value.uname}/submit`)
       }
     }
 
@@ -620,6 +630,7 @@ export default defineComponent({
   }
 
   .target-select__content {
+    content: '';
     position: relative;
     max-width: 300px;
     height: 40px;
