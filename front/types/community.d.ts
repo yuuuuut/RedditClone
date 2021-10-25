@@ -4,4 +4,5 @@ export interface Community {
   description: string
   mainImage: string
   headerImage: string
+  isJoin: boolean
 }

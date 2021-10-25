@@ -14,14 +14,28 @@
               <div :class="{'filter-card__current-item': route.path === '/' || route.path === '/hot'}">Hot</div>
             </div>
           </NuxtLink>
-          <div class="filter-card__item">
-            <v-icon class="mr-1">mdi-decagram</v-icon>
-            <div>New</div>
-          </div>
-          <div class="filter-card__item">
-            <v-icon class="mr-1">mdi-arrow-up-thick</v-icon>
-            <div>Top</div>
-          </div>
+          <NuxtLink to="/new">
+            <div class="filter-card__item">
+              <v-icon
+                :class="{'filter-card__current-item': route.path === '/new'}"
+                class="mr-1"
+              >
+                mdi-decagram
+              </v-icon>
+              <div :class="{'filter-card__current-item': route.path === '/new'}">New</div>
+            </div>
+          </NuxtLink>
+          <NuxtLink to="/top">
+            <div class="filter-card__item">
+              <v-icon
+                :class="{'filter-card__current-item': route.path === '/top'}"
+                class="mr-1"
+              >
+                mdi-arrow-up-thick
+              </v-icon>
+              <div :class="{'filter-card__current-item': route.path === '/top'}">Top</div>
+            </div>
+          </NuxtLink>
         </div>
       </v-card>
       <div v-for="post in posts" :key="post.post.id" class="mb-3">

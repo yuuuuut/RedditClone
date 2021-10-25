@@ -54,27 +54,30 @@
 </template>
 
 <script lang="ts">
-import { useRoute } from '@nuxtjs/composition-api'
-import { computed, defineComponent, onMounted, ref } from '@vue/composition-api'
+import { useRoute, computed, defineComponent, onMounted, ref } from '@nuxtjs/composition-api'
+import { Community } from '~/types/community'
 import { $axios } from '~/utils/api'
 
 export default defineComponent({
   setup() {
     const route = useRoute()
 
-    const community = ref({})
+    const community = ref<Community>({
+      name: '',
+      description: '',
+      mainImage: '',
+      headerImage: '',
+      isJoin: false
+    })
 
     const is =  computed(() => {
       return route.value.name === 'r-name'
     })
 
     onMounted(async () => {
-      console.log(route)
       if (route.value.name !== 'r-name-submit') {
-        console.log('OK')
         const response = await $axios.get(`communities/${route.value.params.name}`)
         community.value = response.data.community
-        console.log(response)
       }
     })
 
@@ -83,7 +86,6 @@ export default defineComponent({
         const response = await $axios.post('/account/communities', { community_id: route.value.params.name })
         community.value.isJoin = true
       } catch (e) {
-
       }
     }
 
@@ -92,7 +94,6 @@ export default defineComponent({
         const response = await $axios.delete(`/account/communities/${route.value.params.name}`)
         community.value.isJoin = false
       } catch (e) {
-
       }
     }
 
