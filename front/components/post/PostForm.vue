@@ -62,19 +62,19 @@
               class="mr-3"
               size="25"
             >
-              <template v-if="parameterType === 'user'">
+              <template v-if="parameterType === 'user' && currentUser">
                 <v-img :src="currentUser.image" />
               </template>
-              <template v-if="parameterType === 'r'">
+              <template v-if="parameterType === 'r' && currentCommunity">
                 <v-img :src="currentCommunity.mainImage" />
               </template>
             </v-avatar>
             <div v-else class="not-avatar mr-3" />
-            <div v-if="!firstLoad && isParameter">
+            <div v-if="!firstLoad && isParameter && currentUser">
               <div v-if="parameterType === 'user'">
                 user/{{ currentUser.uname }}
               </div>
-              <div v-if="parameterType === 'r'">
+              <div v-if="parameterType === 'r' && currentCommunity">
                 r/{{ currentCommunity.name }}
               </div>
             </div>
@@ -250,11 +250,14 @@
 <script lang="ts">
 import { computed, defineComponent, onBeforeUnmount, onDeactivated, onMounted, ref, useContext, useRoute, useRouter } from "@nuxtjs/composition-api"
 import { deleteObject, getDownloadURL, ref as r, uploadBytesResumable } from 'firebase/storage'
+import { AxiosResponse } from 'axios'
 import { storage } from "~/plugins/firebase"
-import { userStore } from "~/store"
-import { PostData, Post } from "~/types/post"
-import { UserPost } from "~/types/user"
 import { $axios } from "~/utils/api"
+import { userStore } from "~/store"
+
+import { PostData, Post, PostType, PostStatus } from "~/types/post"
+import { Community } from "~/types/community"
+import { UserPost } from "~/types/user"
 
 let cashPost: Post | null = null
 
@@ -263,11 +266,15 @@ export default defineComponent({
     const ROOT_SUBMIT_ROUTE = 'submit'
     const USER_SUBMIT_ROUTE = 'user-name-submit'
     const COMMUNITY_SUBMIT_ROUTE = 'r-name-submit'
-    const POST_TYPE = {
+    const POST_TYPE: PostType = {
       none: 'none',
       user: 'user',
       community: 'community'
-    } as const
+    }
+    const POST_STATUS: PostStatus = {
+      draft: 'draft',
+      public: 'public'
+    }
 
     const { error } = useContext()
     const route = useRoute()
@@ -280,7 +287,7 @@ export default defineComponent({
     const isImageHover = ref(false)
     const draftPosts = ref<PostData[]>([])
     const isDraftPostsLoad = ref(true)
-    const communities = ref([])
+    const communities = ref<Community[]>([])
     const post = ref<Post>({
       id: 0,
       title: '',
@@ -444,7 +451,6 @@ export default defineComponent({
     }
 
     const clickSelectCommunityItem = (name: string) => {
-      console.log(name)
       const draftId = route.value.query.draft
       if (draftId) {
         router.push(`/r/${name}/submit?draft=${draftId}`)
@@ -499,10 +505,10 @@ export default defineComponent({
 
     const updatePost = async (postPublic: boolean) => {
       changePostType()
-      post.value.status = (postPublic) ? 'public' : 'draft'
+      post.value.status = (postPublic) ? POST_STATUS.public : POST_STATUS.draft
       try {
-        let response
-        if (post.value.type === 'community') {
+        let response: AxiosResponse<any>
+        if (post.value.type === POST_TYPE.community) {
           response = await $axios.put(`/account/posts/${route.value.query.draft}?community_id=${route.value.params.name}`, { post: post.value, post_image: post.value.postImage })
         } else {
           response = await $axios.put(`/account/posts/${route.value.query.draft}`, { post: post.value, post_image: post.value.postImage })
@@ -518,7 +524,7 @@ export default defineComponent({
           router.push('/')
         }
       } catch (e) {
-        post.value.status = 'draft'
+        post.value.status = POST_STATUS.draft
       }
     }
 
@@ -528,8 +534,8 @@ export default defineComponent({
     const createDraftPost = async () => {
       let response
       changePostType()
-      post.value.status = 'draft'
-      if (post.value.type === 'community') {
+      post.value.status = POST_STATUS.draft
+      if (post.value.type === POST_TYPE.community) {
         response = await $axios.post(`/posts?community_id=${route.value.params.name}`, { post: post.value, post_image: post.value.postImage })
       } else {
         response = await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
