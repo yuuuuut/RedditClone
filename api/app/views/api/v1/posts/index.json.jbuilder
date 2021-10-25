@@ -21,6 +21,12 @@ json.posts do
       json.uname post.user.uname
       json.image post.user.image
     end
+    if post.community.present?
+      json.community do
+        json.name post.community.name
+        json.mainImage post.community.main_image
+      end
+    end
   end
 end
 

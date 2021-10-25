@@ -19,11 +19,19 @@
               color="primary"
               size="23"
             >
-              <v-img :src="propsPost.user.image" />
+              <v-img v-if="propsPost.post.type === POST_TYPE.community && propsPost.community" :src="propsPost.community.mainImage" />
+              <v-img v-else :src="propsPost.user.image" />
             </v-avatar>
             <div class="post-header">
-              <div class="post-name">{{ postName }}</div>
-              <div class="post-posted">・ Posted by {{ postName }} 6 months ago</div>
+              <div class="post-name">
+                <template v-if="propsPost.post.type === POST_TYPE.community && propsPost.community">
+                  {{ communityRename(propsPost.community.name) }}
+                </template>
+                <template v-else>
+                  {{ userRename(propsPost.user.uname) }}
+                </template>
+              </div>
+              <div class="post-posted">・ Posted by {{ userRename(propsPost.user.uname) }} 6 months ago</div>
             </div>
           </div>
           <div>
@@ -31,6 +39,9 @@
           </div>
           <div class="post-text__parent">
             <div class="post-text" v-text="propsPost.post.text"></div>
+          </div>
+          <div v-if="propsPost.post.postImage.url" class="mt-2">
+            <v-img max-width="100%" max-height="300" :src="propsPost.post.postImage.url" />
           </div>
         </div>
         <div class="post-footer">
@@ -53,12 +64,16 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from "@nuxtjs/composition-api"
+import { computed, defineComponent, PropType } from "@nuxtjs/composition-api"
+
+import { userRename, communityRename } from "~/plugins/function"
+import { POST_TYPE } from "~/plugins/const"
+import { PostData } from "~/types/post"
 
 export default defineComponent({
   props: {
     post: {
-      type: Object,
+      type: Object as PropType<PostData>,
       required: true
     }
   },
@@ -66,15 +81,12 @@ export default defineComponent({
     const propsPost = computed(() => {
       return props.post
     })
-    const postName = computed(() => {
-      if (props.post.post.type === 'user') {
-        return 'u/' + props.post.user.uname
-      }
-      return 'None'
-    })
+
     return {
       propsPost,
-      postName
+      POST_TYPE,
+      userRename,
+      communityRename
     }
   }
 })
@@ -82,7 +94,6 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 .card {
-  max-height: 400px;
   overflow-x: hidden;
 }
 

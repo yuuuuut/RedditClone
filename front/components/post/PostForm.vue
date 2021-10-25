@@ -251,11 +251,13 @@
 import { computed, defineComponent, onBeforeUnmount, onDeactivated, onMounted, ref, useContext, useRoute, useRouter } from "@nuxtjs/composition-api"
 import { deleteObject, getDownloadURL, ref as r, uploadBytesResumable } from 'firebase/storage'
 import { AxiosResponse } from 'axios'
+
+import { POST_TYPE, POST_STATUS, ROOT_SUBMIT_ROUTE, USER_SUBMIT_ROUTE, COMMUNITY_SUBMIT_ROUTE } from '~/plugins/const'
 import { storage } from "~/plugins/firebase"
 import { $axios } from "~/utils/api"
 import { userStore } from "~/store"
 
-import { PostData, Post, PostType, PostStatus } from "~/types/post"
+import { PostData, Post } from "~/types/post"
 import { Community } from "~/types/community"
 import { UserPost } from "~/types/user"
 
@@ -263,19 +265,6 @@ let cashPost: Post | null = null
 
 export default defineComponent({
   setup() {
-    const ROOT_SUBMIT_ROUTE = 'submit'
-    const USER_SUBMIT_ROUTE = 'user-name-submit'
-    const COMMUNITY_SUBMIT_ROUTE = 'r-name-submit'
-    const POST_TYPE: PostType = {
-      none: 'none',
-      user: 'user',
-      community: 'community'
-    }
-    const POST_STATUS: PostStatus = {
-      draft: 'draft',
-      public: 'public'
-    }
-
     const { error } = useContext()
     const route = useRoute()
     const router = useRouter()
@@ -681,6 +670,7 @@ export default defineComponent({
 .select-menu__item {
   display: flex;
   align-items: center;
+  margin-bottom: 10px;
 }
 
 .image-area {

@@ -278,6 +278,10 @@ export default defineComponent({
 .v-overlay {
   transition: initial !important;
 }
+
+a {
+  text-decoration: none;
+}
 </style>
 
 <style lang="scss" scoped>
