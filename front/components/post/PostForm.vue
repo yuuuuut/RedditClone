@@ -2,7 +2,7 @@
   <div class="form">
     <div class="d-flex justify-space-between">
       <h3 class="mb-3">
-        <div v-if="isDraftQuery.isQuery">Update a post</div>
+        <div v-if="draftQuery">Update a post</div>
         <div v-else>Create a post</div>
       </h3>
       <v-dialog
@@ -33,13 +33,13 @@
           </div>
           <v-divider />
           <v-card-text class="draft-post__item">
-            <div v-for="p in draftPosts" :key="p.post.id">
-              <div class="py-1 px-2" @click="selectDraftPosr(p.post.id)">
-                <div>{{ p.post.title }}</div>
+            <div v-for="p in draftPosts" :key="p.id">
+              <div class="py-1 px-2" @click="selectDraftPosr(p.id)">
+                <div>{{ p.title }}</div>
                 <div class="d-flex">
                   <div class="draft-post__sub-text">{{ p.user.uname }}</div>
                   <div class="draft-post__sub-text mx-1">・</div>
-                  <div class="draft-post__sub-text">Draft saved {{ p.post.createdAt }}</div>
+                  <div class="draft-post__sub-text">Draft saved {{ p.createdAt }}</div>
                 </div>
               </div>
               <v-divider />
@@ -49,7 +49,7 @@
       </v-dialog>
     </div>
     <v-divider class="divider" />
-    <div v-if="!firstLoad" class="target-select">
+    <div class="target-select">
       <v-menu offset-y>
         <!-- eslint-disable-next-line vue/v-slot-style -->
         <template v-slot:activator="{ on, attrs }">
@@ -63,21 +63,11 @@
               class="mr-3"
               size="25"
             >
-              <template v-if="parameterType === 'user' && currentUser">
-                <v-img :src="currentUser.image" />
-              </template>
-              <template v-if="parameterType === 'r' && currentCommunity">
-                <v-img :src="currentCommunity.mainImage" />
-              </template>
+              <v-img :src="selectMenuImage" />
             </v-avatar>
             <div v-else class="not-avatar mr-3" />
-            <div v-if="!firstLoad && isParameter && currentUser">
-              <div v-if="parameterType === 'user'">
-                user/{{ currentUser.uname }}
-              </div>
-              <div v-if="parameterType === 'r' && currentCommunity">
-                r/{{ currentCommunity.name }}
-              </div>
+            <div v-if="isParameter">
+              {{ selectMenuName }}
             </div>
             <div v-else>
               Choose a community
@@ -104,7 +94,7 @@
               v-for="c in communities"
               :key="c.name"
               class="select-menu__item"
-              @click="clickSelectCommunityItem(c.name)"
+              @click="clickSelectCommunityItem(c.name, c.mainImage)"
             >
               <v-avatar class="mr-3" size="40">
                 <v-img :src="c.mainImage" />
@@ -114,9 +104,6 @@
           </div>
         </div>
       </v-menu>
-    </div>
-    <div v-else class="target-select">
-      <div class="target-select__content" />
     </div>
     <v-card>
       <v-tabs
@@ -234,13 +221,13 @@
       </div>
       <v-divider />
       <div class="d-flex justify-end pa-3">
-        <v-chip v-if="isDraftQuery.isQuery" :disabled="!isDraftQuery.isQuery" color="primary" class="mr-3" @click="updatePost(false)">
+        <v-chip v-if="draftQuery" :disabled="!draftQuery" color="primary" class="mr-3" @click="updatePost(false)">
           UPDATE DRAFT
         </v-chip>
         <v-chip v-else :disabled="!post.title" color="primary" class="mr-3" @click="createDraftPost">
           SAVE DRAFT
         </v-chip>
-        <v-chip v-if="isDraftQuery.isQuery" color="black" text-color="white" :disabled="!isParameter || !post.title" @click="updatePost(true)">
+        <v-chip v-if="draftQuery" color="black" text-color="white" :disabled="!isParameter || !post.title" @click="updatePost(true)">
           POST
         </v-chip>
         <v-chip v-else color="black" text-color="white" :disabled="!isParameter || !post.title" @click="createPost">
@@ -252,20 +239,17 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onBeforeUnmount, onDeactivated, onMounted, ref, useContext, useRoute, useRouter } from "@nuxtjs/composition-api"
+import { computed, defineComponent, onMounted, onUnmounted, ref, useContext, useRoute, useRouter } from "@nuxtjs/composition-api"
 import { deleteObject, getDownloadURL, ref as r, uploadBytesResumable } from 'firebase/storage'
 import { AxiosResponse } from 'axios'
 
-import { POST_TYPE, POST_STATUS, ROOT_SUBMIT_ROUTE, USER_SUBMIT_ROUTE, COMMUNITY_SUBMIT_ROUTE } from '~/plugins/const'
+import { POST_TYPE, POST_STATUS, USER_SUBMIT_ROUTE, COMMUNITY_SUBMIT_ROUTE } from '~/plugins/const'
 import { storage } from "~/plugins/firebase"
 import { $axios } from "~/utils/api"
 import { userStore } from "~/store"
 
-import { PostData, Post } from "~/types/post"
+import { PostData, Post, PostType } from "~/types/post"
 import { Community } from "~/types/community"
-import { UserPost } from "~/types/user"
-
-let cashPost: Post | null = null
 
 export default defineComponent({
   setup() {
@@ -273,16 +257,20 @@ export default defineComponent({
     const route = useRoute()
     const router = useRouter()
 
-    const firstLoad = ref(true)
+    const selectMenuName = ref('')
+    const selectMenuImage = ref('')
+    const isParameter = ref(false)
+    const draftQuery = ref(0)
+    const selectCommunityName = ref('')
+    const postType = ref<PostType>('none')
+
     const tab = ref(null)
     const tabs = ref(['POST', 'IMAGE', 'LINK'])
     const draftDialog = ref(false)
     const isImageHover = ref(false)
     const draftPosts = ref<PostData[]>([])
-    const isDraftPostsLoad = ref(true)
     const communities = ref<Community[]>([])
     const post = ref<Post>({
-      id: 0,
       title: '',
       text: '',
       url: '',
@@ -298,39 +286,22 @@ export default defineComponent({
       }
     })
 
-    onDeactivated(() => {
-      cashPost = post.value as Post
-    })
+
+    const confirmSave = (event: BeforeUnloadEvent) => {
+      event.returnValue = "編集中のものは保存されませんが、よろしいですか？";
+    }
 
     /**
      * Computed
      */
-    const isParameter = computed(() => {
-      const name = route.value.name
-      if (name === USER_SUBMIT_ROUTE) return true
-      if (name === COMMUNITY_SUBMIT_ROUTE) return true
-      return false
-    })
-    const parameterType = computed(() => {
-      const name = route.value.name
-      if (name === USER_SUBMIT_ROUTE) return 'user'
-      if (name === COMMUNITY_SUBMIT_ROUTE) return 'r'
-      return 'none'
-    })
-    const isDraftQuery = computed(() => {
-      const r = route.value.query.draft
-      return r ? { isQuery: true, draftId: r } : { isQuery: false, draftId: '' }
-    })
     const currentUser = computed(() => {
       return userStore.currentUser
     })
-    const currentCommunity = computed(() => {
-      const paramValue = route.value.params.name
-      const community = communities.value.find(c => {
-        return c.name === paramValue
-      })
-      return community
-    })
+
+    /**
+     * created
+     */
+    window.addEventListener("beforeunload", confirmSave)
 
     /**
      * Mounted
@@ -339,52 +310,101 @@ export default defineComponent({
       await getCurrentUserCommunities()
       await getDraftPosts()
 
-      setTimeout(() => {
-
-      }, 5000)
-
+      if (route.value.name === USER_SUBMIT_ROUTE) {
+        setSelectMenu(currentUser.value!.uname, currentUser.value!.image)
+        isParameter.value = true
+        postType.value = 'user'
+      }
+      if (route.value.name === COMMUNITY_SUBMIT_ROUTE) {
+        const community = communities.value.find(c => {
+          return route.value.params.name === c.name
+        })
+        if (!community) return
+        setSelectMenu(community.name, community.mainImage)
+        isParameter.value = true
+        postType.value = 'community'
+      }
       if (route.value.query.draft) {
         checkIsQueryDraftPost()
       }
-      if (cashPost) {
-        post.value = cashPost
-      }
-      firstLoad.value = false
     })
 
-    /**
-     * Unmount
-     */
-    onBeforeUnmount(() => {
-      const routeName = route.value.name
-      if (routeName === USER_SUBMIT_ROUTE ||
-          routeName === COMMUNITY_SUBMIT_ROUTE ||
-          routeName === ROOT_SUBMIT_ROUTE
-      ) return
-      cashPost = null
+    onUnmounted(() => {
+      window.removeEventListener("beforeunload", confirmSave)
     })
 
-
-    /**
+    /**************
      * Methods
-     */
-
-    /**
-     * file input を擬似的にclickさせる。
-     */
+     **************/
     const btnclick = () => {
       const elm = document.getElementById('imageInput') as HTMLElement
       elm.click()
     }
-
     const imageMouseOver = () => {
       isImageHover.value = true
     }
-
     const imageMouseLeave = () => {
       isImageHover.value = false
     }
 
+/**
+ * OK
+ */
+    const clickSelectUserItem = () => {
+      if (!currentUser.value) return
+      if (draftQuery.value) {
+        history.pushState({}, '', `/user/${currentUser.value.uname}/submit?draft=${draftQuery.value}`)
+      } else {
+        history.pushState({}, '', `/user/${currentUser.value.uname}/submit`)
+      }
+      setSelectMenu(currentUser.value.uname, currentUser.value.image)
+      postType.value = 'user'
+    }
+
+    const clickSelectCommunityItem = (name: string, image: string) => {
+      if (draftQuery.value) {
+        history.pushState({}, '', `/r/${name}/submit?draft=${draftQuery.value}`)
+      } else {
+        history.pushState({}, '', `/r/${name}/submit`)
+      }
+      setSelectMenu(name, image)
+      selectCommunityName.value = name
+      postType.value = 'community'
+    }
+
+    const setSelectMenu = (name: string, image: string) => {
+      isParameter.value = true
+      selectMenuName.value = name
+      selectMenuImage.value = image
+    }
+
+    /**
+     * ParameterでPostのTypeを判定して遷移先を変える。
+     */
+    const changePostTyprRouterPush = (post: PostData) => {
+      switch (post.type) {
+        case POST_TYPE.user:
+          history.pushState({}, '', `/user/${post.user.uname}/submit?draft=${post.id}`)
+          setSelectMenu(post.user.uname, post.user.image)
+          postType.value = 'user'
+          break
+        case POST_TYPE.community:
+          history.pushState({}, '', `/r/${post.communityId}/submit?draft=${post.id}`)
+          setSelectMenu(post.community!.name, post.community!.mainImage)
+          postType.value = 'community'
+          selectCommunityName.value = post.community!.name
+          break
+        default:
+          history.pushState({}, '', `/submit?draft=${post.id}`)
+          isParameter.value = false
+          postType.value = 'none'
+          break
+      }
+    }
+
+/**
+ * NG
+ */
     const getCurrentUserCommunities = async () => {
       try {
         const response = await $axios.get('account/communities')
@@ -400,13 +420,13 @@ export default defineComponent({
      */
     const checkIsQueryDraftPost = () => {
       const draftPost = draftPosts.value.find(p => {
-        return String(p.post.id) === route.value.query.draft
+        return String(p.id) === route.value.query.draft
       })
       if (!draftPost){
         error({ statusCode: 404 })
         return
       }
-      post.value = draftPost.post
+      post.value = draftPost
     }
 
     /**
@@ -416,7 +436,6 @@ export default defineComponent({
       const response = await $axios.get('/account/posts?status=draft')
       if (!response.data) return
       draftPosts.value = response.data.posts
-      isDraftPostsLoad.value = false
     }
 
     /**
@@ -431,63 +450,23 @@ export default defineComponent({
       if (!response.data) return
       post.value = response.data.post
       draftDialog.value = false
-      changePostTyprRouterPush(response.data.post, response.data.user)
-    }
-
-    /**
-     * 
-     */
-    const clickSelectUserItem = () => {
-      const draftId = route.value.query.draft
-      if (!currentUser.value) return
-      if (draftId) {
-        history.pushState({}, '', `/user/${currentUser.value.uname}/submit?draft=${draftId}`)
-        // router.push(`/user/${currentUser.value.uname}/submit?draft=${draftId}`)
-      } else {
-        history.pushState({}, '', `/user/${currentUser.value.uname}/submit`)
-        // router.push(`/user/${currentUser.value.uname}/submit`)
-      }
-    }
-
-    const clickSelectCommunityItem = (name: string) => {
-      const draftId = route.value.query.draft
-      if (draftId) {
-        router.push(`/r/${name}/submit?draft=${draftId}`)
-      } else {
-        router.push(`/r/${name}/submit`)
-      }
+      draftQuery.value = postId
+      changePostTyprRouterPush(response.data.post)
     }
 
     /**
      * ParameterでPostのTypeを判定してセットする。
      */
     const changePostType = () => {
-      switch (route.value.name) {
-        case USER_SUBMIT_ROUTE:
+      switch (postType.value) {
+        case 'user':
           post.value.type = POST_TYPE.user
           break
-        case COMMUNITY_SUBMIT_ROUTE:
+        case 'community':
           post.value.type = POST_TYPE.community
           break
         default:
           post.value.type = POST_TYPE.none
-          break
-      }
-    }
-
-    /**
-     * ParameterでPostのTypeを判定して遷移先を変える。
-     */
-    const changePostTyprRouterPush = (post: Post, user: UserPost) => {
-      switch (post.type) {
-        case POST_TYPE.user:
-          router.push(`/user/${user.uname}/submit?draft=${post.id}`)
-          break
-        case POST_TYPE.community:
-          router.push(`/r/${post.communityId}/submit?draft=${post.id}`)
-          break
-        default:
-          router.push(`/submit?draft=${post.id}`)
           break
       }
     }
@@ -504,21 +483,21 @@ export default defineComponent({
 
     const updatePost = async (postPublic: boolean) => {
       changePostType()
-      post.value.status = (postPublic) ? POST_STATUS.public : POST_STATUS.draft
+      post.value.status = (postPublic) ? 'public' : 'draft'
       try {
         let response: AxiosResponse<any>
-        if (post.value.type === POST_TYPE.community) {
-          response = await $axios.put(`/account/posts/${route.value.query.draft}?community_id=${route.value.params.name}`, { post: post.value, post_image: post.value.postImage })
+        if (post.value.type === 'community') {
+          response = await $axios.put(`/account/posts/${draftQuery.value}?community_id=${selectCommunityName.value}`, { post: post.value, post_image: post.value.postImage })
         } else {
-          response = await $axios.put(`/account/posts/${route.value.query.draft}`, { post: post.value, post_image: post.value.postImage })
+          response = await $axios.put(`/account/posts/${draftQuery.value}`, { post: post.value, post_image: post.value.postImage })
         }
-        // const response = await $axios.put(`/account/posts/${route.value.query.draft}`, { post: post.value, post_image: post.value.postImage })
         if (!postPublic) {
-          post.value = response.data.post
+          const resPost = response.data.post as PostData
           draftPosts.value = draftPosts.value.filter(p => {
-            return p.post.id !== response.data.post.id
+            return p.id !== response.data.post.id
           })
-          draftPosts.value.push({ post: post.value, user: response.data.user })
+          draftPosts.value.push(resPost)
+          draftQuery.value = resPost.id
         } else {
           router.push('/')
         }
@@ -539,9 +518,10 @@ export default defineComponent({
       } else {
         response = await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
       }
-      const resPost = response.data.post
+      const resPost = response.data.post as PostData
       draftPosts.value.push(resPost)
-      changePostTyprRouterPush(resPost, response.data.user)
+      changePostTyprRouterPush(resPost)
+      draftQuery.value = resPost.id
     }
 
     const imageUpload = async (file: Blob) => {
@@ -569,19 +549,18 @@ export default defineComponent({
     }
 
     return {
-      firstLoad,
+      selectMenuName,
+      selectMenuImage,
       tab,
       tabs,
       draftDialog,
       post,
       communities,
       isImageHover,
-      isDraftQuery,
+      draftQuery,
       draftPosts,
       isParameter,
       currentUser,
-      parameterType,
-      currentCommunity,
       checkIsQueryDraftPost,
       clickSelectUserItem,
       clickSelectCommunityItem,
@@ -595,6 +574,7 @@ export default defineComponent({
       createDraftPost,
       imageUpload,
       deleteImage,
+      confirmSave
     }
   }
 })

@@ -54,7 +54,24 @@ export default defineComponent({
 
 
 <style lang="scss">
+.v-menu__content {
+  box-shadow: initial !important;
+  border: 1px solid #dae0e6;
+}
+
 .v-overlay {
+  transition: initial !important;
+}
+
+.v-menu {
+  opacity: initial !important;
+}
+
+.v-menu-transition-enter-active {
+  transition: initial !important;
+}
+
+.v-menu-transition-leave-active {
   transition: initial !important;
 }
 

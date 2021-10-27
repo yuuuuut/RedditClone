@@ -38,7 +38,7 @@
           </NuxtLink>
         </div>
       </v-card>
-      <div v-for="post in posts" :key="post.post.id" class="mb-3">
+      <div v-for="post in posts" :key="post.id" class="mb-3">
         <Post :post="post" />
       </div>
     </div>
