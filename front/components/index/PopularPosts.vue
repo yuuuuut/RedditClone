@@ -1,41 +1,36 @@
 <template>
   <v-col ref="root" cols="8">
+    <div class="popular-title">Popular posts</div>
     <div class="main">
       <v-card class="filter-card" outlined>
         <div class="filter-card__items">
-          <NuxtLink to="/hot">
-            <div class="filter-card__item">
-              <v-icon
-                :class="{'filter-card__current-item': route.path === '/' || route.path === '/hot'}"
-                class="mr-1"
-              >
-                mdi-fire
-              </v-icon>
-              <div :class="{'filter-card__current-item': route.path === '/' || route.path === '/hot'}">Hot</div>
-            </div>
-          </NuxtLink>
-          <NuxtLink to="/new">
-            <div class="filter-card__item">
-              <v-icon
-                :class="{'filter-card__current-item': route.path === '/new'}"
-                class="mr-1"
-              >
-                mdi-decagram
-              </v-icon>
-              <div :class="{'filter-card__current-item': route.path === '/new'}">New</div>
-            </div>
-          </NuxtLink>
-          <NuxtLink to="/top">
-            <div class="filter-card__item">
-              <v-icon
-                :class="{'filter-card__current-item': route.path === '/top'}"
-                class="mr-1"
-              >
-                mdi-arrow-up-thick
-              </v-icon>
-              <div :class="{'filter-card__current-item': route.path === '/top'}">Top</div>
-            </div>
-          </NuxtLink>
+          <div class="filter-card__item" @click="pushRouter('/hot')">
+            <v-icon
+              :class="{'filter-card__current-item': currentPagePath === '/' || currentPagePath === '/hot'}"
+              class="mr-1"
+            >
+              mdi-fire
+            </v-icon>
+            <div :class="{'filter-card__current-item': currentPagePath === '/' || currentPagePath === '/hot'}">Hot</div>
+          </div>
+          <div class="filter-card__item" @click="pushRouter('/new')">
+            <v-icon
+              :class="{'filter-card__current-item': currentPagePath === '/new'}"
+              class="mr-1"
+            >
+              mdi-decagram
+            </v-icon>
+            <div :class="{'filter-card__current-item': currentPagePath === '/new'}">New</div>
+          </div>
+          <div class="filter-card__item" @click="pushRouter('/top')">
+            <v-icon
+              :class="{'filter-card__current-item': currentPagePath === '/top'}"
+              class="mr-1"
+            >
+              mdi-arrow-up-thick
+            </v-icon>
+            <div :class="{'filter-card__current-item': currentPagePath === '/top'}">Top</div>
+          </div>
         </div>
       </v-card>
       <div v-for="post in posts" :key="post.id" class="mb-3">
@@ -43,20 +38,24 @@
       </div>
     </div>
   </v-col>
+  </template>
 </template>
 
 <script lang="ts">
 import { useRoute } from '@nuxtjs/composition-api'
-import { computed, defineComponent, onMounted, onUnmounted, ref } from '@vue/composition-api'
+import { defineComponent, onMounted, onUnmounted, ref } from '@vue/composition-api'
 import { Pagination } from '~/types/pagination'
 import { PostData } from '~/types/post'
 import { $axios } from '~/utils/api'
+
+type Paths = '/' | '/hot' | '/new' | '/top'
 
 export default defineComponent({
   setup() {
     const root = ref<HTMLElement | null>(null)
     const route = useRoute()
 
+    const currentPagePath = ref<Paths>('/')
     const posts = ref<PostData[]>([])
     const pagination = ref<Pagination>({
       currentPage: 1,
@@ -67,11 +66,21 @@ export default defineComponent({
       totalPages: 1
     })
 
-    const isCurrentPage = computed(() => {
-      return true
-    })
+    const pushRouter = (path: Paths) => {
+      history.pushState({}, '', `${path}`)
+      currentPagePath.value = path
+    }
 
     onMounted(async () => {
+      if (route.value.path === '/' || route.value.path === '/hot') {
+        currentPagePath.value = '/hot'
+      }
+      if (route.value.path === '/new') {
+        currentPagePath.value = '/new'
+      }
+      if (route.value.path === '/top') {
+        currentPagePath.value = '/top'
+      }
       window.addEventListener("scroll", handleScroll)
       const response = await $axios.get('/posts')
       posts.value.push(...response.data.posts)
@@ -97,7 +106,8 @@ export default defineComponent({
       root,
       route,
       posts,
-      isCurrentPage
+      currentPagePath,
+      pushRouter
     }
   }
 })
@@ -106,6 +116,11 @@ export default defineComponent({
 <style lang="scss" scoped>
 .main {
   width: 97%;
+}
+
+.popular-title {
+  margin-bottom: 10px;
+  font-size: 15px;
 }
 
 .filter-card {

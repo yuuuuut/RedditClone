@@ -54,6 +54,7 @@ export default {
     // https://go.nuxtjs.dev/axios
     '@nuxtjs/axios',
     '@nuxtjs/proxy',
+    'vue2-editor/nuxt',
     'cookie-universal-nuxt'
   ],
 

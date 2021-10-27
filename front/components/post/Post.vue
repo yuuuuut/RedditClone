@@ -37,11 +37,12 @@
           <div>
             <div class="post-title">{{ props.post.title }}</div>
           </div>
-          <div class="post-text__parent">
-            <div class="post-text" v-text="props.post.text"></div>
-          </div>
           <div v-if="props.post.postImage.url" class="mt-2">
             <v-img max-width="100%" max-height="300" :src="props.post.postImage.url" />
+          </div>
+          <div class="post-text__parent">
+            <!-- eslint-disable-next-line vue/no-v-html -->
+            <div class="post-text" v-html="props.post.text"></div>
           </div>
         </div>
         <div class="post-footer">
