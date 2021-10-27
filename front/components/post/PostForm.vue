@@ -87,18 +87,101 @@
               <div>user/{{ currentUser.uname }}</div>
             </div>
           </div>
-          <div v-if="communities.length" class="select-menu">
-            <div class="select-menu__item-title">my communities</div>
-            <div
-              v-for="c in communities"
-              :key="c.name"
-              class="select-menu__item"
-              @click="clickSelectCommunityItem(c.name, c.mainImage)"
-            >
-              <v-avatar class="mr-3" size="40">
-                <v-img :src="c.mainImage" />
-              </v-avatar>
-              <div>r/{{ c.name }}</div>
+          <div class="select-menu">
+            <div class="d-flex justify-space-between mb-3">
+              <div class="select-menu__item-title">my communities</div>
+              <!-- Create New Community Dialog -->
+              <v-dialog
+                v-model="createCommunityDialog"
+                width="500"
+              >
+                <template #activator="{ on, attrs }">
+                  <div
+                    v-bind="attrs"
+                    class="select-menu__item-create"
+                    v-on="on"
+                  >
+                    Create New
+                  </div>
+                </template>
+                <v-card>
+                  <v-card-title class="d-flex justify-space-between">
+                    <div>Create a community</div>
+                    <v-icon @click="createCommunityDialog = false">mdi-close</v-icon>
+                  </v-card-title>
+                  <v-divider></v-divider>
+                  <div class="pa-3">
+                    <div class="mb-10">
+                      <div class="mb-6">
+                        <label>Name</label>
+                        <div class="community-dialog__subtext">Community names including capitalization cannot be changed.</div>
+                      </div>
+                      <v-text-field
+                        v-model="createCommunity.name"
+                        outlined
+                        hide-details="auto"
+                        class="community-create__name-input"
+                        prefix="r/"
+                        :maxlength="MAX_COMMUNITY_NAME"
+                      />
+                      <div class="community-dialog__subtext mt-1">{{ communityTextLength }} Characters remaining</div>
+                    </div>
+                    <div>
+                      <div>
+                        <label>Community type</label>
+                      </div>
+                      <v-radio-group  v-model="createCommunity.type">
+                        <v-radio
+                          v-for="t in communityTypes"
+                          :key="t.type"
+                          :value="t.type"
+                          
+                        >
+                          <template #label>
+                            <div class="d-flex">
+                              <v-icon size="17" class="mx-1">{{ t.icon }}</v-icon>
+                              <div class="community-create__radio-text">{{ t.upperType }}</div>
+                              <div class="community-create__radio-subtext">{{ t.subtext }}</div>
+                            </div>
+                          </template>
+                        </v-radio>
+                      </v-radio-group>
+                    </div>
+                  </div>
+                  <v-divider></v-divider>
+                  <v-card-actions class="grey lighten-2">
+                    <div style="margin-left:auto">
+                      <v-btn
+                        rounded
+                        outlined
+                        color="primary"
+                        class="mr-1"
+                      >
+                        Cancel
+                      </v-btn>
+                      <v-btn
+                        rounded
+                        color="primary"
+                      >
+                        Create Community
+                      </v-btn>
+                    </div>
+                  </v-card-actions>
+                </v-card>
+              </v-dialog>
+            </div>
+            <div v-if="communities.length">
+              <div
+                v-for="c in communities"
+                :key="c.name"
+                class="select-menu__item"
+                @click="clickSelectCommunityItem(c.name, c.mainImage)"
+              >
+                <v-avatar class="mr-3" size="40">
+                  <v-img :src="c.mainImage" />
+                </v-avatar>
+                <div>r/{{ c.name }}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -239,7 +322,7 @@ import { computed, defineComponent, onMounted, ref, useContext, useRoute, useRou
 import { deleteObject, getDownloadURL, ref as r, uploadBytesResumable } from 'firebase/storage'
 import { AxiosResponse } from 'axios'
 
-import { POST_TYPE, POST_STATUS, USER_SUBMIT_ROUTE, COMMUNITY_SUBMIT_ROUTE } from '~/plugins/const'
+import {  MAX_COMMUNITY_NAME, USER_SUBMIT_ROUTE, COMMUNITY_SUBMIT_ROUTE } from '~/plugins/const'
 import { storage } from "~/plugins/firebase"
 import { $axios } from "~/utils/api"
 import { userStore } from "~/store"
@@ -270,6 +353,7 @@ export default defineComponent({
 
     const tab = ref(null)
     const tabs = ref(['POST', 'IMAGE', 'LINK'])
+    const createCommunityDialog = ref(true)
     const draftDialog = ref(false)
     const isImageHover = ref(false)
     const draftPosts = ref<PostData[]>([])
@@ -289,10 +373,22 @@ export default defineComponent({
         url: ''
       }
     })
+    const createCommunity = ref({
+      name: '',
+      type: 'public',
+    })
+    const communityTypes = ref([
+      { type: 'public', upperType: 'Public', icon: 'mdi-account', subtext: 'Anyone can view, post, and comment to this community' },
+      { type: 'restricted', upperType: 'Restricted', icon: 'mdi-eye', subtext: 'Anyone can view this community, but only approved users can post' },
+      { type: 'private', upperType: 'Private', icon: 'mdi-lock', subtext: 'Only approved users can view and submit to this community' }
+    ])
 
     /**
      * Computed
      */
+    const communityTextLength = computed(() => {
+      return MAX_COMMUNITY_NAME - createCommunity.value.name.length
+    })
     const currentUser = computed(() => {
       return userStore.currentUser
     })
@@ -373,12 +469,12 @@ export default defineComponent({
      */
     const changePostTyprRouterPush = (post: PostData) => {
       switch (post.type) {
-        case POST_TYPE.user:
+        case 'user':
           history.pushState({}, '', `/user/${post.user.uname}/submit?draft=${post.id}`)
           setSelectMenu(post.user.uname, post.user.image)
           postType.value = 'user'
           break
-        case POST_TYPE.community:
+        case 'community':
           history.pushState({}, '', `/r/${post.communityId}/submit?draft=${post.id}`)
           setSelectMenu(post.community!.name, post.community!.mainImage)
           postType.value = 'community'
@@ -450,13 +546,13 @@ export default defineComponent({
     const changePostType = () => {
       switch (postType.value) {
         case 'user':
-          post.value.type = POST_TYPE.user
+          post.value.type = 'user'
           break
         case 'community':
-          post.value.type = POST_TYPE.community
+          post.value.type = 'community'
           break
         default:
-          post.value.type = POST_TYPE.none
+          post.value.type = 'none'
           break
       }
     }
@@ -492,7 +588,7 @@ export default defineComponent({
           router.push('/')
         }
       } catch (e) {
-        post.value.status = POST_STATUS.draft
+        post.value.status = 'draft'
       }
     }
 
@@ -502,8 +598,8 @@ export default defineComponent({
     const createDraftPost = async () => {
       let response
       changePostType()
-      post.value.status = POST_STATUS.draft
-      if (post.value.type === POST_TYPE.community) {
+      post.value.status = 'draft'
+      if (post.value.type === 'community') {
         response = await $axios.post(`/posts?community_id=${route.value.params.name}`, { post: post.value, post_image: post.value.postImage })
       } else {
         response = await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
@@ -540,6 +636,7 @@ export default defineComponent({
 
     return {
       selectMenuName,
+      createCommunityDialog,
       selectMenuImage,
       tab,
       tabs,
@@ -565,7 +662,11 @@ export default defineComponent({
       imageUpload,
       deleteImage,
       VueEditor,
-      customToolbar
+      customToolbar,
+      createCommunity,
+      communityTypes,
+      MAX_COMMUNITY_NAME,
+      communityTextLength
     }
   }
 })
@@ -577,6 +678,14 @@ export default defineComponent({
   box-shadow: initial;
   border: 1px solid #dae0e6;
   max-height: 300px;
+}
+
+.v-input--selection-controls {
+  margin-top: 8px;
+}
+
+::v-deep .v-input--selection-controls__input {
+  margin-right: 0 !important;
 }
 
 ::v-deep .v-dialog {
@@ -644,9 +753,13 @@ export default defineComponent({
 }
 
 .select-menu__item-title {
-  font-size: 14px;
+  font-size: 12px;
   color: gray;
-  margin-bottom: 10px;
+}
+
+.select-menu__item-create {
+  font-size: 15px;
+  color: rgb(16, 124, 248);
 }
 
 .select-menu__item {
@@ -681,4 +794,26 @@ export default defineComponent({
     }
   }
 }
+
+/** Community Create Dialog */
+label {
+  font-size: 17px;
+}
+
+.community-create__radio-text {
+  margin-right: 4px;
+  color: black;
+  font-size: 14px;
+}
+
+.community-dialog__subtext {
+  font-size: 12px;
+  color: #797b7c;
+}
+
+.community-create__radio-subtext {
+  font-size: 12px;
+  color: #797b7c;
+}
+
 </style>
