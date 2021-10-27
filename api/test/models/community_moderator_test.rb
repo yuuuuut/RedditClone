@@ -1,6 +1,6 @@
 require "test_helper"
 
-class ModeratorCommunityTest < ActiveSupport::TestCase
+class CommunityModeratorTest < ActiveSupport::TestCase
   # test "the truth" do
   #   assert true
   # end

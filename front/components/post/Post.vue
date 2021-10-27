@@ -19,12 +19,12 @@
               color="primary"
               size="23"
             >
-              <v-img v-if="props.post.type === POST_TYPE.community && props.post.community" :src="props.post.community.mainImage" />
+              <v-img v-if="props.post.type === 'community' && props.post.community" :src="props.post.community.mainImage" />
               <v-img v-else :src="post.user.image" />
             </v-avatar>
             <div class="post-header">
               <div class="post-name">
-                <template v-if="props.post.type === POST_TYPE.community && props.post.community">
+                <template v-if="props.post.type === 'community' && props.post.community">
                   {{ communityRename(props.post.community.name) }}
                 </template>
                 <template v-else>
@@ -68,7 +68,6 @@
 import { defineComponent, PropType } from "@nuxtjs/composition-api"
 
 import { userRename, communityRename } from "~/plugins/function"
-import { POST_TYPE } from "~/plugins/const"
 import { PostData } from "~/types/post"
 
 export default defineComponent({
@@ -82,7 +81,6 @@ export default defineComponent({
 
     return {
       props,
-      POST_TYPE,
       userRename,
       communityRename
     }

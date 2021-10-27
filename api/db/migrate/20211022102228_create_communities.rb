@@ -5,6 +5,7 @@ class CreateCommunities < ActiveRecord::Migration[6.1]
       t.text :description
       t.string :main_image
       t.string :header_image
+      t.integer :type, default: 0
       t.integer :color, default: 0
       t.integer :header_height, default: 0
       t.integer :limitation, default: 0, index: true

@@ -17,7 +17,6 @@ class Api::V1::PostsController < Api::V1::ApplicationController
       @post.build_post_image(url: post_image_params[:url], uid: post_image_params[:uid])
     end
     @post.save!
-    puts @post.inspect()
   end
 
   private

@@ -50,10 +50,9 @@
     </div>
     <v-divider class="divider" />
     <div class="target-select">
-      <v-menu offset-y>
-        <template #activator="{ on, attrs }">
+      <v-menu v-model="selectMenu" offset-y>
+        <template #activator="{ on }">
           <div
-            v-bind="attrs"
             class="target-select__content"
             v-on="on"
           >
@@ -100,6 +99,7 @@
                     v-bind="attrs"
                     class="select-menu__item-create"
                     v-on="on"
+                    @click="clickCreateNewButton"
                   >
                     Create New
                   </div>
@@ -117,7 +117,7 @@
                         <div class="community-dialog__subtext">Community names including capitalization cannot be changed.</div>
                       </div>
                       <v-text-field
-                        v-model="createCommunity.name"
+                        v-model="community.name"
                         outlined
                         hide-details="auto"
                         class="community-create__name-input"
@@ -130,12 +130,11 @@
                       <div>
                         <label>Community type</label>
                       </div>
-                      <v-radio-group  v-model="createCommunity.type">
+                      <v-radio-group  v-model="community.type">
                         <v-radio
                           v-for="t in communityTypes"
                           :key="t.type"
                           :value="t.type"
-                          
                         >
                           <template #label>
                             <div class="d-flex">
@@ -156,12 +155,14 @@
                         outlined
                         color="primary"
                         class="mr-1"
+                        @click="createCommunityDialog = false"
                       >
                         Cancel
                       </v-btn>
                       <v-btn
                         rounded
                         color="primary"
+                        @click="createCommunity"
                       >
                         Create Community
                       </v-btn>
@@ -343,7 +344,8 @@ export default defineComponent({
       ["blockquote", "code-block"],
       ["image"]
     ])
-
+    
+    const selectMenu = ref(false)
     const selectMenuName = ref('')
     const selectMenuImage = ref('')
     const isParameter = ref(false)
@@ -353,7 +355,7 @@ export default defineComponent({
 
     const tab = ref(null)
     const tabs = ref(['POST', 'IMAGE', 'LINK'])
-    const createCommunityDialog = ref(true)
+    const createCommunityDialog = ref(false)
     const draftDialog = ref(false)
     const isImageHover = ref(false)
     const draftPosts = ref<PostData[]>([])
@@ -373,7 +375,7 @@ export default defineComponent({
         url: ''
       }
     })
-    const createCommunity = ref({
+    const community = ref({
       name: '',
       type: 'public',
     })
@@ -387,7 +389,7 @@ export default defineComponent({
      * Computed
      */
     const communityTextLength = computed(() => {
-      return MAX_COMMUNITY_NAME - createCommunity.value.name.length
+      return MAX_COMMUNITY_NAME - community.value.name.length
     })
     const currentUser = computed(() => {
       return userStore.currentUser
@@ -426,6 +428,10 @@ export default defineComponent({
       const elm = document.getElementById('imageInput') as HTMLElement
       elm.click()
     }
+    const clickCreateNewButton = () => {
+      createCommunityDialog.value = true
+      selectMenu.value = false
+    }
     const imageMouseOver = () => {
       isImageHover.value = true
     }
@@ -433,9 +439,21 @@ export default defineComponent({
       isImageHover.value = false
     }
 
-/**
- * OK
- */
+    const createCommunity = async () => {
+      try {
+        const response = await $axios.post('/account/communities', { community: community.value })
+        const resCommunity = response.data.community
+        communities.value.push(resCommunity)
+        createCommunityDialog.value = false
+        selectMenu.value = false
+        selectCommunityName.value = resCommunity.name
+        postType.value = 'community'
+        setSelectMenu(resCommunity.name, resCommunity.mainImage)
+        history.pushState({}, '', `/r/${resCommunity.name}/submit`)
+      } catch (e) {
+      }
+    }
+
     const clickSelectUserItem = () => {
       if (!currentUser.value) return
       if (draftQuery.value) {
@@ -563,7 +581,11 @@ export default defineComponent({
      */
     const createPost = async () => {
       changePostType()
-      await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
+      if (post.value.type === 'community') {
+        await $axios.post(`/posts?community_id=${selectCommunityName.value}`, { post: post.value, post_image: post.value.postImage })
+      }  else {
+        await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
+      }
       router.push('/')
     }
 
@@ -635,6 +657,8 @@ export default defineComponent({
     }
 
     return {
+      selectMenu,
+      clickCreateNewButton,
       selectMenuName,
       createCommunityDialog,
       selectMenuImage,
@@ -663,6 +687,7 @@ export default defineComponent({
       deleteImage,
       VueEditor,
       customToolbar,
+      community,
       createCommunity,
       communityTypes,
       MAX_COMMUNITY_NAME,

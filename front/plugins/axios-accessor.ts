@@ -41,7 +41,7 @@ export const accessor: Plugin = ({ $axios, $cookies, store, redirect, error }): 
     }
 
     if ((axiosError.config as CustomRequestConfig)?.dontDisplayErrorPage) return
-    error({ statusCode: status })
+    // error({ statusCode: status })
   })
   initializeAxios($axios)
 }
