@@ -54,6 +54,10 @@ export default defineComponent({
 
 
 <style lang="scss">
+.v-application p {
+  margin-bottom: 0 !important;
+}
+
 .v-menu__content {
   box-shadow: initial !important;
   border: 1px solid #dae0e6;

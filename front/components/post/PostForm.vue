@@ -51,8 +51,7 @@
     <v-divider class="divider" />
     <div class="target-select">
       <v-menu offset-y>
-        <!-- eslint-disable-next-line vue/v-slot-style -->
-        <template v-slot:activator="{ on, attrs }">
+        <template #activator="{ on, attrs }">
           <div
             v-bind="attrs"
             class="target-select__content"
@@ -138,12 +137,7 @@
               class="mb-2"
             />
             <div v-if="t === 'POST'">
-              <v-textarea
-                v-model="post.text"
-                placeholder="Text(optional)"
-                hide-details="auto"
-                outlined
-              />
+              <VueEditor v-model="post.text" :editor-toolbar="customToolbar" />
             </div>
             <div v-if="t === 'IMAGE'">
               <div class="image-area">
@@ -239,7 +233,9 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, onUnmounted, ref, useContext, useRoute, useRouter } from "@nuxtjs/composition-api"
+import { VueEditor } from  "vue2-editor"
+
+import { computed, defineComponent, onMounted, ref, useContext, useRoute, useRouter } from "@nuxtjs/composition-api"
 import { deleteObject, getDownloadURL, ref as r, uploadBytesResumable } from 'firebase/storage'
 import { AxiosResponse } from 'axios'
 
@@ -256,6 +252,14 @@ export default defineComponent({
     const { error } = useContext()
     const route = useRoute()
     const router = useRouter()
+
+    const customToolbar = ref([
+      ["bold", "italic", "underline"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      [{ color: [] }],
+      ["blockquote", "code-block"],
+      ["image"]
+    ])
 
     const selectMenuName = ref('')
     const selectMenuImage = ref('')
@@ -286,22 +290,12 @@ export default defineComponent({
       }
     })
 
-
-    const confirmSave = (event: BeforeUnloadEvent) => {
-      event.returnValue = "編集中のものは保存されませんが、よろしいですか？";
-    }
-
     /**
      * Computed
      */
     const currentUser = computed(() => {
       return userStore.currentUser
     })
-
-    /**
-     * created
-     */
-    window.addEventListener("beforeunload", confirmSave)
 
     /**
      * Mounted
@@ -327,10 +321,6 @@ export default defineComponent({
       if (route.value.query.draft) {
         checkIsQueryDraftPost()
       }
-    })
-
-    onUnmounted(() => {
-      window.removeEventListener("beforeunload", confirmSave)
     })
 
     /**************
@@ -574,7 +564,8 @@ export default defineComponent({
       createDraftPost,
       imageUpload,
       deleteImage,
-      confirmSave
+      VueEditor,
+      customToolbar
     }
   }
 })
