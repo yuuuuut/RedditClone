@@ -33,7 +33,9 @@ export default {
   plugins: [
     '@/plugins/axios-accessor',
     '@/plugins/cookies-accessor',
-    '@/plugins/firebase.ts'
+    '@/plugins/firebase.ts',
+    '@/plugins/const',
+    '@/plugins/function'
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components

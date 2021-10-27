@@ -15,10 +15,12 @@ Rails.application.routes.draw do
           end
         end
         resources :posts
+        resources :communities
       end
 
       resources :posts
       resources :post_images
+      resources :communities
     end
   end
 end

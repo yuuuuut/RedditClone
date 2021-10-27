@@ -18,11 +18,8 @@ export default defineComponent({
   components: {
     PostForm
   },
-  middleware: ['identification'],
+  // middleware: ['identification'],
   setup() {
   }
 })
 </script>
-
-<style lang="scss" scoped>
-</style>

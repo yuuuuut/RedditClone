@@ -1,7 +1,4 @@
-# This file should contain all the record creation needed to seed the database with its default values.
-# The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
-#
-# Examples:
-#
-#   movies = Movie.create([{ name: 'Star Wars' }, { name: 'Lord of the Rings' }])
-#   Character.create(name: 'Luke', movie: movies.first)
+Community.create(name: 'Test1', main_image: 'https://firebasestorage.googleapis.com/v0/b/redditclone-16a84.appspot.com/o/images%2Fcommunity%2Fmain%2Fgame.png?alt=media&token=761c5fa0-3cb4-4b75-a5b0-5d215a3adada', header_image: 'https://firebasestorage.googleapis.com/v0/b/redditclone-16a84.appspot.com/o/images%2Fcommunity%2Fmain%2Fgame.png?alt=media&token=761c5fa0-3cb4-4b75-a5b0-5d215a3adada')
+Community.create(name: 'Test2', main_image: 'https://firebasestorage.googleapis.com/v0/b/redditclone-16a84.appspot.com/o/images%2Fcommunity%2Fmain%2Fgame.png?alt=media&token=761c5fa0-3cb4-4b75-a5b0-5d215a3adada', header_image: 'https://firebasestorage.googleapis.com/v0/b/redditclone-16a84.appspot.com/o/images%2Fcommunity%2Fmain%2Fgame.png?alt=media&token=761c5fa0-3cb4-4b75-a5b0-5d215a3adada')
+Community.create(name: 'Test3', main_image: 'https://firebasestorage.googleapis.com/v0/b/redditclone-16a84.appspot.com/o/images%2Fcommunity%2Fmain%2Fgame.png?alt=media&token=761c5fa0-3cb4-4b75-a5b0-5d215a3adada', header_image: 'https://firebasestorage.googleapis.com/v0/b/redditclone-16a84.appspot.com/o/images%2Fcommunity%2Fmain%2Fgame.png?alt=media&token=761c5fa0-3cb4-4b75-a5b0-5d215a3adada')
+Community.create(name: 'Test4', main_image: 'https://firebasestorage.googleapis.com/v0/b/redditclone-16a84.appspot.com/o/images%2Fcommunity%2Fmain%2Fgame.png?alt=media&token=761c5fa0-3cb4-4b75-a5b0-5d215a3adada', header_image: 'https://firebasestorage.googleapis.com/v0/b/redditclone-16a84.appspot.com/o/images%2Fcommunity%2Fmain%2Fgame.png?alt=media&token=761c5fa0-3cb4-4b75-a5b0-5d215a3adada')

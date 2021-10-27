@@ -16,6 +16,7 @@ class Api::V1::Account::PostsController < Api::V1::ApplicationController
     @post = Post.find_by(id: params[:id], user: current_user)
     ActiveRecord::Base.transaction do
       @post.update!(update_post_params)
+      @post.create_community_if_exists(params[:community_id])
       @post.update_post_image(post_image_params[:url], post_image_params[:uid])
     end
   end

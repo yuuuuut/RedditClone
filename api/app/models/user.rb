@@ -13,11 +13,25 @@ class User < ActiveRecord::Base
   include DeviseTokenAuth::Concerns::User
 
   has_many :posts, dependent: :destroy
+  has_many :user_communities
+  has_many :communities, through: :user_communities, source: :community
 
   validates :uname, uniqueness: true
 
   def self.processing_uname(uname)
     'Own_' + uname
+  end
+
+  def join_community(community)
+    communities << community
+  end
+
+  def leave_community(community)
+    communities.delete(community)
+  end
+
+  def joined_community?(community)
+    communities.include?(community)
   end
 
 end

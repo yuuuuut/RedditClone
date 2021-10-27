@@ -3,21 +3,42 @@
     <div class="main">
       <v-card class="filter-card" outlined>
         <div class="filter-card__items">
-          <div class="filter-card__item">
-            <v-icon class="mr-1">mdi-fire</v-icon>
-            <div>Hot</div>
-          </div>
-          <div class="filter-card__item">
-            <v-icon class="mr-1">mdi-decagram</v-icon>
-            <div>New</div>
-          </div>
-          <div class="filter-card__item">
-            <v-icon class="mr-1">mdi-arrow-up-thick</v-icon>
-            <div>Top</div>
-          </div>
+          <NuxtLink to="/hot">
+            <div class="filter-card__item">
+              <v-icon
+                :class="{'filter-card__current-item': route.path === '/' || route.path === '/hot'}"
+                class="mr-1"
+              >
+                mdi-fire
+              </v-icon>
+              <div :class="{'filter-card__current-item': route.path === '/' || route.path === '/hot'}">Hot</div>
+            </div>
+          </NuxtLink>
+          <NuxtLink to="/new">
+            <div class="filter-card__item">
+              <v-icon
+                :class="{'filter-card__current-item': route.path === '/new'}"
+                class="mr-1"
+              >
+                mdi-decagram
+              </v-icon>
+              <div :class="{'filter-card__current-item': route.path === '/new'}">New</div>
+            </div>
+          </NuxtLink>
+          <NuxtLink to="/top">
+            <div class="filter-card__item">
+              <v-icon
+                :class="{'filter-card__current-item': route.path === '/top'}"
+                class="mr-1"
+              >
+                mdi-arrow-up-thick
+              </v-icon>
+              <div :class="{'filter-card__current-item': route.path === '/top'}">Top</div>
+            </div>
+          </NuxtLink>
         </div>
       </v-card>
-      <div v-for="post in posts" :key="post.post.id" class="mb-3">
+      <div v-for="post in posts" :key="post.id" class="mb-3">
         <Post :post="post" />
       </div>
     </div>
@@ -25,7 +46,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, onUnmounted, ref } from '@vue/composition-api'
+import { useRoute } from '@nuxtjs/composition-api'
+import { computed, defineComponent, onMounted, onUnmounted, ref } from '@vue/composition-api'
 import { Pagination } from '~/types/pagination'
 import { PostData } from '~/types/post'
 import { $axios } from '~/utils/api'
@@ -33,6 +55,7 @@ import { $axios } from '~/utils/api'
 export default defineComponent({
   setup() {
     const root = ref<HTMLElement | null>(null)
+    const route = useRoute()
 
     const posts = ref<PostData[]>([])
     const pagination = ref<Pagination>({
@@ -42,6 +65,10 @@ export default defineComponent({
       prevPage: null,
       totalCount: null,
       totalPages: 1
+    })
+
+    const isCurrentPage = computed(() => {
+      return true
     })
 
     onMounted(async () => {
@@ -68,7 +95,9 @@ export default defineComponent({
 
     return {
       root,
-      posts
+      route,
+      posts,
+      isCurrentPage
     }
   }
 })
@@ -95,5 +124,12 @@ export default defineComponent({
   display: flex;
   align-items: center;
   color: rgb(120, 124, 126);
+}
+
+.filter-card__current-item {
+  display: flex;
+  align-items: center;
+  color: rgb(12, 66, 243);
+  font-weight: bold;
 }
 </style>

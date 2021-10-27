@@ -1,14 +1,18 @@
+import { Community } from "./community"
 import { UserPost } from "./user"
 
+export type PostType = 'none' | 'user' | 'community'
+export type PostStatus = 'draft' | 'public'
+
 export interface Post {
-  id: number
-  status: 'draft' | 'public'
+  status: PostStatus
   title: string
   text: string
   url: string
   spoiler: boolean
   nsfw: boolean
-  type: 'none' | 'user' | 'community'
+  type: PostType
+  communityId: string
   createdAt: Date | null
   postImage: {
     uid: string
@@ -17,6 +21,21 @@ export interface Post {
 }
 
 export interface PostData {
+  id: number
+  status: PostStatus
+  title: string
+  text: string
+  url: string
+  spoiler: boolean
+  nsfw: boolean
+  type: PostType
+  communityId: string
+  createdAt: Date | null
+  postImage: {
+    uid: string
+    url: string
+  }
   user: UserPost
-  post: Post
+  community?: Community
 }
+

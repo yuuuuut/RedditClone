@@ -2,39 +2,55 @@
   <div class="mb-7">
     <div class="name">Trending today</div>
     <div class="d-flex justify-space-between">
-      <div v-for="community in communities" :key="community.name" class="post-image__wrap">
-        <v-img :src="community.image" class="post-image" />
-        <div class="post-image__name">
-          {{ community.name }}
-        </div>
-        <div class="post-image__describe">
-          {{ community.describe }}
-        </div>
-        <div class="post-image__community-wrap">
-          <v-avatar
-            color="primary"
-            size="19"
-          ></v-avatar>
-          <div class="post-image__community-name">
-            r/news and more
+      <div v-for="community in communities" :key="community.id" class="post-image__wrap">
+        <NuxtLink :to="`/r/${community.name}`">
+          <v-img :src="community.mainImage" class="post-image" />
+          <div class="post-image__name">
+            {{ community.name }}
           </div>
-        </div>
+          <div class="post-image__describe">
+            {{ community.description }}
+          </div>
+          <div class="post-image__community-wrap">
+            <v-avatar
+              color="primary"
+              size="19"
+            >
+              <v-img src="https://firebasestorage.googleapis.com/v0/b/redditclone-16a84.appspot.com/o/images%2F16349048489070?alt=media&token=5ed7d2a8-6dda-430f-8c62-9ba7ca166b3b" />
+            </v-avatar>
+            <div class="post-image__community-name">
+              r/news and more
+            </div>
+          </div>
+        </NuxtLink>
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive } from "@vue/composition-api"
+import { defineComponent, onMounted, reactive, ref } from "@vue/composition-api"
+import { $axios } from "~/utils/api"
 
 export default defineComponent({
   setup() {
-    const communities = reactive([
-      { image: "/image/sample.jpeg", name: "Covid", describe: "あああああああああああああああああああああああああああああ" },
-      { image: "/image/sample.jpeg", name: "Covid", describe: "あああああああああああああああああああああああああああああ" },
-      { image: "/image/sample.jpeg", name: "Covid", describe: "あああああああああああああああああああああああああああああ" },
-      { image: "/image/sample.jpeg", name: "Covid", describe: "あああああああああああああああああああああああああああああ" }
-    ])
+    const communities = ref([])
+    // const communities = reactive([
+    //   { image: "/image/sample.jpeg", name: "Covid", describe: "あああああああああああああああああああああああああああああ" },
+    //   { image: "/image/sample.jpeg", name: "Covid", describe: "あああああああああああああああああああああああああああああ" },
+    //   { image: "/image/sample.jpeg", name: "Covid", describe: "あああああああああああああああああああああああああああああ" },
+    //   { image: "/image/sample.jpeg", name: "Covid", describe: "あああああああああああああああああああああああああああああ" }
+    // ])
+
+    onMounted(async () => {
+      await a()
+    })
+
+    const a = async () => {
+      const response = await $axios.get('/communities')
+      communities.value.push(...response.data.communities)
+    }
+
 
     
     return {

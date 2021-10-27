@@ -1,9 +1,13 @@
 <template>
-  <v-row no-gutters>
-    <v-col cols="10">
-      <PostForm />
-    </v-col>
-  </v-row>
+  <v-container>
+    <v-row no-gutters>
+      <v-col cols="10">
+        <keep-alive>
+          <PostForm />
+        </keep-alive>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script lang="ts">
@@ -14,14 +18,6 @@ export default defineComponent({
   components: {
     PostForm
   },
-  // beforeRouteLeave(to, from, next) {
-  //   // this.test()
-  //   if (to.name !== "r-name-submit") {
-  //     localStorage.removeItem('post-value')
-  //     localStorage.removeItem('post-image')
-  //   }
-  //   next()
-  // },
   setup() {
   }
 })
