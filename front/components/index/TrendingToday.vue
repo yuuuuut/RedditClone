@@ -71,11 +71,11 @@ export default defineComponent({
   position: relative;
   background: #000;
   border-radius: 10px;
-  width: 238px;
+  width: 260px;
   cursor: pointer;
 
   .post-image {
-    width: 238px;
+    width: 260px;
     height: 178px;
     border-radius: 10px;
     display: block;

@@ -43,7 +43,7 @@
 
 <script lang="ts">
 import { useRoute } from '@nuxtjs/composition-api'
-import { defineComponent, onMounted, onUnmounted, ref } from '@vue/composition-api'
+import { defineComponent, onMounted, onUnmounted, ref, watch } from '@vue/composition-api'
 import { Pagination } from '~/types/pagination'
 import { PostData } from '~/types/post'
 import { $axios } from '~/utils/api'
@@ -88,6 +88,10 @@ export default defineComponent({
 
     onUnmounted(() => {
       window.removeEventListener("scroll", handleScroll)
+    })
+
+    watch(() => route.value.path, () => {
+      console.log('Watch')
     })
 
     const handleScroll = async () => {

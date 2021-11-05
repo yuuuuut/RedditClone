@@ -2,9 +2,9 @@
   <v-app>
     <v-app-bar color="white" height="48" app>
       <v-toolbar-title>
-        <NuxtLink to="/">
+        <div @click="a">
           Reddit Clone
-        </NuxtLink>
+        </div>
       </v-toolbar-title>
       <v-text-field
         hide-details
@@ -184,14 +184,14 @@
         </v-card>
       </v-dialog>
     </v-app-bar>
-    <v-main class="main">
+    <v-main ref="r" class="main">
       <Nuxt />
     </v-main>
   </v-app>
 </template>
 
 <script lang="ts">
-import {  computed, defineComponent, ref, useRouter} from '@nuxtjs/composition-api'
+import {  computed, defineComponent, onMounted, ref, useRoute, useRouter} from '@nuxtjs/composition-api'
 import { userStore } from '@/plugins/store-accessor'
 import { Providers } from '~/store/user'
 import { $axios } from '~/utils/api'
@@ -200,8 +200,11 @@ type dialogType = "LOGIN" | "SIGNUP"
 
 export default defineComponent({
   setup() {
+    const route = useRoute()
     const router = useRouter()
     const pattern = /^[0-9a-zA-Z]*$/
+
+    const r = ref(null)
 
     const on = ref<any>(null)
     const attrs = ref<any>(null)
@@ -214,7 +217,7 @@ export default defineComponent({
         return pattern.test(v) || 'Please enter only alphanumeric characters'
       }
     ])
-  
+
     const isCorrectUname = computed(() => {
       return !uname.value || !pattern.test(uname.value)
     })
@@ -259,7 +262,21 @@ export default defineComponent({
       router.push('/')
     }
 
+    const a = () => {
+        const isRootRoute = route.value.path === '/' ||
+                            route.value.path === '/hot' ||
+                            route.value.path === '/new' ||
+                            route.value.path === '/top'
+      if (r.value) {
+        (isRootRoute)
+          ? r.value.$children[0].$children[0].$children[0].$children[1].pushRouter('/')
+          : router.push('/')
+      }
+    }
+
     return {
+      a,
+      r,
       on,
       attrs,
       dialog,
@@ -367,7 +384,7 @@ a {
 
 @media (min-width: 1264px) {
   .container {
-    max-width: 1000px;
+    max-width: 1100px;
   }
 }
 </style>

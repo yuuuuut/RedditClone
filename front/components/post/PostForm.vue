@@ -319,7 +319,7 @@
 <script lang="ts">
 import { VueEditor } from  "vue2-editor"
 
-import { computed, defineComponent, onMounted, ref, useContext, useRoute, useRouter } from "@nuxtjs/composition-api"
+import { computed, defineComponent, onMounted, ref, useContext, useRoute, useRouter, nextTick } from "@nuxtjs/composition-api"
 import { deleteObject, getDownloadURL, ref as r, uploadBytesResumable } from 'firebase/storage'
 import { AxiosResponse } from 'axios'
 
@@ -332,7 +332,7 @@ import { PostData, Post, PostType } from "~/types/post"
 import { Community } from "~/types/community"
 
 export default defineComponent({
-  setup() {
+  setup(_, context) {
     const { error } = useContext()
     const route = useRoute()
     const router = useRouter()
@@ -415,6 +415,7 @@ export default defineComponent({
         setSelectMenu(community.name, community.mainImage)
         isParameter.value = true
         postType.value = 'community'
+        context.emit('getCommunity', community.name)
       }
       if (route.value.query.draft) {
         checkIsQueryDraftPost()
@@ -472,6 +473,7 @@ export default defineComponent({
         history.pushState({}, '', `/r/${name}/submit`)
       }
       setSelectMenu(name, image)
+      context.emit('getCommunity', name)
       selectCommunityName.value = name
       postType.value = 'community'
     }
@@ -556,6 +558,7 @@ export default defineComponent({
       draftDialog.value = false
       draftQuery.value = postId
       changePostTyprRouterPush(response.data.post)
+      context.emit('getCommunity', post.value.communityId)
     }
 
     /**
@@ -622,7 +625,7 @@ export default defineComponent({
       changePostType()
       post.value.status = 'draft'
       if (post.value.type === 'community') {
-        response = await $axios.post(`/posts?community_id=${route.value.params.name}`, { post: post.value, post_image: post.value.postImage })
+        response = await $axios.post(`/posts?community_id=${selectCommunityName.value}`, { post: post.value, post_image: post.value.postImage })
       } else {
         response = await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
       }
@@ -723,7 +726,7 @@ export default defineComponent({
 }
 
 .form {
-  max-width: 90%;
+  max-width: 97%;
   margin-top: 20px;
 
   .divider {
