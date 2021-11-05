@@ -1,25 +1,25 @@
 <template>
   <v-card class="card">
-    <v-img :src="props.item.headerImage" height="60" />
+    <!-- <v-img :src="props.item.headerImage" height="60" /> -->
     <div class="card-main">
-      <div class="d-flex align-center">
-        <v-avatar size="55">
-          <v-img :src="props.item.mainImage" />
+      <div>
+        <v-avatar tile size="75">
+          <v-img :src="props.item.image" />
         </v-avatar>
-        <div>{{ props.item.path }}</div>
+        <div class="side-item__title">{{ props.item.uname }}</div>
       </div>
     </div>
   </v-card>
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, PropType, ref } from "@nuxtjs/composition-api"
-import { Community } from "~/types/community"
+import { defineComponent, PropType } from "@nuxtjs/composition-api"
+import { UserType } from "~/store/user"
 
 export default defineComponent({
   props: {
     item: {
-      type: String,
+      type: Object as PropType<UserType>,
       required: true
     }
   },
@@ -41,8 +41,8 @@ export default defineComponent({
   padding: 16px;
 }
 
-.info-item {
-  margin: 10px 5px;
+.side-item__title {
+  margin-top: 5px;
   font-size: 14px;
 }
 </style>

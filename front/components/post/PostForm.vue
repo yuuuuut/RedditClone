@@ -176,7 +176,7 @@
                 v-for="c in communities"
                 :key="c.name"
                 class="select-menu__item"
-                @click="clickSelectCommunityItem(c.name, c.mainImage)"
+                @click="clickSelectCommunityItem(c)"
               >
                 <v-avatar class="mr-3" size="40">
                   <v-img :src="c.mainImage" />
@@ -319,7 +319,7 @@
 <script lang="ts">
 import { VueEditor } from  "vue2-editor"
 
-import { computed, defineComponent, onMounted, ref, useContext, useRoute, useRouter, nextTick } from "@nuxtjs/composition-api"
+import { computed, defineComponent, onMounted, ref, useContext, useRoute, useRouter } from "@nuxtjs/composition-api"
 import { deleteObject, getDownloadURL, ref as r, uploadBytesResumable } from 'firebase/storage'
 import { AxiosResponse } from 'axios'
 
@@ -406,16 +406,17 @@ export default defineComponent({
         setSelectMenu(currentUser.value!.uname, currentUser.value!.image)
         isParameter.value = true
         postType.value = 'user'
+        context.emit('getSideItem', currentUser.value?.uname, 'user')
       }
       if (route.value.name === COMMUNITY_SUBMIT_ROUTE) {
         const community = communities.value.find(c => {
           return route.value.params.name === c.name
         })
         if (!community) return
-        setSelectMenu(community.name, community.mainImage)
+        setSelectMenu(community.path, community.mainImage)
         isParameter.value = true
         postType.value = 'community'
-        context.emit('getCommunity', community.name)
+        context.emit('getSideItem', community.name, 'community')
       }
       if (route.value.query.draft) {
         checkIsQueryDraftPost()
@@ -449,7 +450,8 @@ export default defineComponent({
         selectMenu.value = false
         selectCommunityName.value = resCommunity.name
         postType.value = 'community'
-        setSelectMenu(resCommunity.name, resCommunity.mainImage)
+        context.emit('getSideItem', resCommunity.name, 'community')
+        setSelectMenu(resCommunity.path, resCommunity.mainImage)
         history.pushState({}, '', `/r/${resCommunity.name}/submit`)
       } catch (e) {
       }
@@ -463,18 +465,19 @@ export default defineComponent({
         history.pushState({}, '', `/user/${currentUser.value.uname}/submit`)
       }
       setSelectMenu(currentUser.value.uname, currentUser.value.image)
+      context.emit('getSideItem', currentUser.value.uname, 'user')
       postType.value = 'user'
     }
 
-    const clickSelectCommunityItem = (name: string, image: string) => {
+    const clickSelectCommunityItem = (community: Community) => {
       if (draftQuery.value) {
-        history.pushState({}, '', `/r/${name}/submit?draft=${draftQuery.value}`)
+        history.pushState({}, '', `/r/${community.name}/submit?draft=${draftQuery.value}`)
       } else {
-        history.pushState({}, '', `/r/${name}/submit`)
+        history.pushState({}, '', `/r/${community.name}/submit`)
       }
-      setSelectMenu(name, image)
-      context.emit('getCommunity', name)
-      selectCommunityName.value = name
+      setSelectMenu(community.path, community.mainImage)
+      context.emit('getSideItem', community.name, 'community')
+      selectCommunityName.value = community.name
       postType.value = 'community'
     }
 
@@ -496,7 +499,7 @@ export default defineComponent({
           break
         case 'community':
           history.pushState({}, '', `/r/${post.communityId}/submit?draft=${post.id}`)
-          setSelectMenu(post.community!.name, post.community!.mainImage)
+          setSelectMenu(post.community!.path, post.community!.mainImage)
           postType.value = 'community'
           selectCommunityName.value = post.community!.name
           break
@@ -558,7 +561,9 @@ export default defineComponent({
       draftDialog.value = false
       draftQuery.value = postId
       changePostTyprRouterPush(response.data.post)
-      context.emit('getCommunity', post.value.communityId)
+      post.value.type === 'user'
+        ? context.emit('getSideItem', currentUser.value?.uname, 'user')
+        : context.emit('getSideItem', post.value.communityId, 'community')
     }
 
     /**

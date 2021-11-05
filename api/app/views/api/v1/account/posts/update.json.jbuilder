@@ -22,6 +22,7 @@ json.post do
     json.community do
       json.name @post.community.name
       json.mainImage @post.community.main_image
+      json.path @post.community.path
     end
   end
 end
