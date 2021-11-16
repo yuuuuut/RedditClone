@@ -2,37 +2,7 @@
   <v-col ref="root" cols="8">
     <div class="popular-title">Popular posts</div>
     <div class="main">
-      <v-card class="filter-card" outlined>
-        <div class="filter-card__items">
-          <div class="filter-card__item" @click="pushRouter('/hot')">
-            <v-icon
-              :class="{'filter-card__current-item': currentPagePath === '/' || currentPagePath === '/hot'}"
-              class="mr-1"
-            >
-              mdi-fire
-            </v-icon>
-            <div :class="{'filter-card__current-item': currentPagePath === '/' || currentPagePath === '/hot'}">Hot</div>
-          </div>
-          <div class="filter-card__item" @click="pushRouter('/new')">
-            <v-icon
-              :class="{'filter-card__current-item': currentPagePath === '/new'}"
-              class="mr-1"
-            >
-              mdi-decagram
-            </v-icon>
-            <div :class="{'filter-card__current-item': currentPagePath === '/new'}">New</div>
-          </div>
-          <div class="filter-card__item" @click="pushRouter('/top')">
-            <v-icon
-              :class="{'filter-card__current-item': currentPagePath === '/top'}"
-              class="mr-1"
-            >
-              mdi-arrow-up-thick
-            </v-icon>
-            <div :class="{'filter-card__current-item': currentPagePath === '/top'}">Top</div>
-          </div>
-        </div>
-      </v-card>
+      <PostHeader :current-select="currentSelect" :click-func="pushRouter" />
       <div v-for="post in posts" :key="post.id" class="mb-3">
         <Post :post="post" />
       </div>
@@ -43,19 +13,17 @@
 
 <script lang="ts">
 import { useRoute } from '@nuxtjs/composition-api'
-import { defineComponent, onMounted, onUnmounted, ref, watch } from '@vue/composition-api'
+import { defineComponent, onMounted, onUnmounted, ref } from '@vue/composition-api'
 import { Pagination } from '~/types/pagination'
-import { PostData } from '~/types/post'
+import { Paths, PostData } from '~/types/post'
 import { $axios } from '~/utils/api'
-
-type Paths = '/' | '/hot' | '/new' | '/top'
 
 export default defineComponent({
   setup() {
     const root = ref<HTMLElement | null>(null)
     const route = useRoute()
 
-    const currentPagePath = ref<Paths>('/')
+    const currentSelect = ref<Paths>('root')
     const posts = ref<PostData[]>([])
     const pagination = ref<Pagination>({
       currentPage: 1,
@@ -67,19 +35,19 @@ export default defineComponent({
     })
 
     const pushRouter = (path: Paths) => {
-      history.pushState({}, '', `${path}`)
-      currentPagePath.value = path
+      history.pushState({}, '', `/${path}`)
+      currentSelect.value = path
     }
 
     onMounted(async () => {
       if (route.value.path === '/' || route.value.path === '/hot') {
-        currentPagePath.value = '/hot'
+        currentSelect.value = 'hot'
       }
       if (route.value.path === '/new') {
-        currentPagePath.value = '/new'
+        currentSelect.value = 'new'
       }
       if (route.value.path === '/top') {
-        currentPagePath.value = '/top'
+        currentSelect.value = 'top'
       }
       window.addEventListener("scroll", handleScroll)
       const response = await $axios.get('/posts')
@@ -88,10 +56,6 @@ export default defineComponent({
 
     onUnmounted(() => {
       window.removeEventListener("scroll", handleScroll)
-    })
-
-    watch(() => route.value.path, () => {
-      console.log('Watch')
     })
 
     const handleScroll = async () => {
@@ -110,7 +74,7 @@ export default defineComponent({
       root,
       route,
       posts,
-      currentPagePath,
+      currentSelect,
       pushRouter
     }
   }

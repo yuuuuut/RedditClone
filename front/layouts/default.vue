@@ -101,14 +101,16 @@
             </v-btn>
           </template>
           <v-list>
-            <v-list-item v-if="isLogin">
-              <v-list-item-icon>
-                <v-icon>mdi-account</v-icon>
-              </v-list-item-icon>
-              <v-list-item-content>
-                <v-list-item-title>My Page</v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
+            <NuxtLink v-if="isLogin && currentUser" :to="`user/${currentUser.uname}`">
+              <v-list-item>
+                <v-list-item-icon>
+                  <v-icon>mdi-account</v-icon>
+                </v-list-item-icon>
+                <v-list-item-content>
+                  <v-list-item-title>Profile</v-list-item-title>
+                </v-list-item-content>
+              </v-list-item>
+            </NuxtLink>
             <v-list-item>
               <v-list-item-icon>
                 <v-icon>mdi-help-circle</v-icon>
@@ -275,7 +277,7 @@ export default defineComponent({
                             route.value.path === '/top'
       if (r.value) {
         (isRootRoute)
-          ? r.value.$children[0].$children[0].$children[0].$children[1].pushRouter('/')
+          ? r.value.$children[0].$children[0].$children[0].$children[1].pushRouter('root')
           : router.push('/')
       }
     }
