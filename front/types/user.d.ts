@@ -3,4 +3,5 @@ export interface UserPost {
   name: string
   uname: string
   image: string
+  headerImage: string
 }

@@ -1,12 +1,15 @@
 <template>
-  <v-container class="mt-5">
-    <v-row v-if="user" no-gutters>
-      <PopularPosts :click-type="'USER'" />
-      <v-col cols="4" style="background-color: #FFCDD2">
-        <PostFormUserSlideItem :item="user" />
-      </v-col>
-    </v-row>
-  </v-container>
+  <div>
+    <nuxt-child v-if="!isParentPage" />
+    <v-container v-else class="mt-5">
+      <v-row v-if="user" no-gutters>
+        <PopularPosts :click-type="'USER'" />
+        <v-col cols="4">
+          <PostFormUserSlideItem :item="user" :is-show-create-btn="true" />
+        </v-col>
+      </v-row>
+    </v-container>
+  </div>
 </template>
 
 <script lang="ts">
@@ -14,7 +17,6 @@ import { computed, defineComponent, onMounted, ref, useRoute  } from '@nuxtjs/co
 
 import PopularPosts from '~/components/index/PopularPosts.vue'
 import PostFormUserSlideItem from '~/components/post/PostFormUserSlideItem.vue'
-import { userStore } from '~/store'
 import User from '~/store/user'
 import { $axios } from '~/utils/api'
 
@@ -32,8 +34,8 @@ export default defineComponent({
     /**
      * Computed
      */
-    const currentUser = computed(() => {
-      return userStore.currentUser
+    const isParentPage =  computed(() => {
+      return route.value.name === 'user-name'
     })
 
     onMounted(async () => {
@@ -54,7 +56,8 @@ export default defineComponent({
     }
 
     return {
-      user
+      user,
+      isParentPage
     }
   }
 })
