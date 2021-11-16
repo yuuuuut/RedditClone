@@ -1,6 +1,5 @@
 <template>
   <v-col ref="root" cols="8">
-    <div class="popular-title">Popular posts</div>
     <div class="main">
       <PostHeader :current-select="currentSelect" :click-func="pushRouter" />
       <div v-for="post in posts" :key="post.id" class="mb-3">
@@ -12,14 +11,19 @@
 </template>
 
 <script lang="ts">
-import { useRoute } from '@nuxtjs/composition-api'
-import { defineComponent, onMounted, onUnmounted, ref } from '@vue/composition-api'
+import { defineComponent, onMounted, onUnmounted, PropType, ref, useRoute } from '@nuxtjs/composition-api'
 import { Pagination } from '~/types/pagination'
 import { Paths, PostData } from '~/types/post'
 import { $axios } from '~/utils/api'
 
 export default defineComponent({
-  setup() {
+  props: {
+    clickType: {
+      type: String as PropType<'ROOT' | 'USER'>,
+      required: true
+    },
+  },
+  setup(props) {
     const root = ref<HTMLElement | null>(null)
     const route = useRoute()
 
@@ -35,8 +39,15 @@ export default defineComponent({
     })
 
     const pushRouter = (path: Paths) => {
-      history.pushState({}, '', `/${path}`)
-      currentSelect.value = path
+      if (props.clickType === 'ROOT') {
+        (path === 'root')
+          ? history.pushState({}, '', `/`)
+          : history.pushState({}, '', `/${path}`)
+        currentSelect.value = path
+      } else {
+        history.pushState({}, '', route.value.path + `?sort=${path}`)
+        currentSelect.value = path
+      }
     }
 
     onMounted(async () => {
@@ -84,11 +95,6 @@ export default defineComponent({
 <style lang="scss" scoped>
 .main {
   width: 97%;
-}
-
-.popular-title {
-  margin-bottom: 10px;
-  font-size: 15px;
 }
 
 .filter-card {

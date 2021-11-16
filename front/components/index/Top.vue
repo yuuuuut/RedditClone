@@ -2,7 +2,7 @@
   <v-container>
     <TrendingToday />
     <v-row no-gutters>
-      <PopularPosts />
+      <PopularPosts :click-type="'ROOT'" />
       <TopCommunities />
     </v-row>
   </v-container>
