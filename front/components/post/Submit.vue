@@ -2,9 +2,7 @@
   <v-container>
     <v-row no-gutters>
       <v-col cols="8">
-        <keep-alive>
-          <PostForm @getSideItem="sendSideItem" />
-        </keep-alive>
+        <PostForm @getSideItem="sendSideItem" />
       </v-col>
       <v-col cols="4" class="mt-16">
         <div v-if="item">
@@ -70,6 +68,10 @@ export default defineComponent({
           item.value = response.data.community
           sideItemType.value = 'community'
         }
+      }
+      if (args[1] === 'none') {
+        item.value = null
+        sideItemType.value = 'none'
       }
     }
 

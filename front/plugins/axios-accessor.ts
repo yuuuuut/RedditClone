@@ -1,5 +1,6 @@
 import { AxiosError, AxiosRequestConfig } from 'axios'
 import { Plugin } from '@nuxt/types'
+
 import { initializeAxios } from '~/utils/api'
 
 export type CustomRequestConfig = AxiosRequestConfig & {
@@ -27,8 +28,6 @@ export const accessor: Plugin = ({ $axios, $cookies, store, redirect, error }): 
     const response = axiosError.response
     const status = response?.status ?? 500
 
-    console.log(response)
-
     // sign_outの404エラーは無視
     if (response?.config.url === '/auth/sign_out') return
     // 422 Validationエラーは無視
@@ -37,10 +36,9 @@ export const accessor: Plugin = ({ $axios, $cookies, store, redirect, error }): 
     if (status === 401) {
       store.dispatch('user/logout')
       redirect('/')
-      return
     }
 
-    if ((axiosError.config as CustomRequestConfig)?.dontDisplayErrorPage) return
+    // if ((axiosError.config as CustomRequestConfig)?.dontDisplayErrorPage) return
     // error({ statusCode: status })
   })
   initializeAxios($axios)

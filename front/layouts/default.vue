@@ -187,18 +187,24 @@
     <v-main ref="r" class="main">
       <Nuxt />
     </v-main>
+    <FlashMessage />
   </v-app>
 </template>
 
 <script lang="ts">
-import {  computed, defineComponent, onMounted, ref, useRoute, useRouter} from '@nuxtjs/composition-api'
+import {  computed, defineComponent, ref, useRoute, useRouter} from '@nuxtjs/composition-api'
 import { userStore } from '@/plugins/store-accessor'
 import { Providers } from '~/store/user'
 import { $axios } from '~/utils/api'
 
+import FlashMessage from '~/components/FlashMessage.vue'
+
 type dialogType = "LOGIN" | "SIGNUP"
 
 export default defineComponent({
+  components: {
+    FlashMessage
+  },
   setup() {
     const route = useRoute()
     const router = useRouter()

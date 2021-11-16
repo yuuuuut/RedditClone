@@ -34,7 +34,7 @@
           <v-divider />
           <v-card-text class="draft-post__item">
             <div v-for="p in draftPosts" :key="p.id">
-              <div class="py-1 px-2" @click="selectDraftPosr(p.id)">
+              <div class="py-1 px-2" @click="selectDraftPost(p.id)">
                 <div>{{ p.title }}</div>
                 <div class="d-flex">
                   <div class="draft-post__sub-text">{{ p.user.uname }}</div>
@@ -326,7 +326,7 @@ import { AxiosResponse } from 'axios'
 import {  MAX_COMMUNITY_NAME, USER_SUBMIT_ROUTE, COMMUNITY_SUBMIT_ROUTE } from '~/plugins/const'
 import { storage } from "~/plugins/firebase"
 import { $axios } from "~/utils/api"
-import { userStore } from "~/store"
+import { flashMessageStore, userStore } from "~/store"
 
 import { PostData, Post, PostType } from "~/types/post"
 import { Community } from "~/types/community"
@@ -337,6 +337,7 @@ export default defineComponent({
     const route = useRoute()
     const router = useRouter()
 
+    // vue2-editor set up
     const customToolbar = ref([
       ["bold", "italic", "underline"],
       [{ list: "ordered" }, { list: "bullet" }],
@@ -423,9 +424,9 @@ export default defineComponent({
       }
     })
 
-    /**************
+    /**
      * Methods
-     **************/
+     */
     const btnclick = () => {
       const elm = document.getElementById('imageInput') as HTMLElement
       elm.click()
@@ -439,6 +440,16 @@ export default defineComponent({
     }
     const imageMouseLeave = () => {
       isImageHover.value = false
+    }
+
+
+    /**
+     * statusがdraftのpostを取得する。
+     */
+    const getDraftPosts = async () => {
+      const response = await $axios.get('/account/posts?status=draft')
+      if (!response.data) return
+      draftPosts.value = response.data.posts
     }
 
     const createCommunity = async () => {
@@ -487,83 +498,18 @@ export default defineComponent({
       selectMenuImage.value = image
     }
 
-    /**
-     * ParameterでPostのTypeを判定して遷移先を変える。
-     */
-    const changePostTyprRouterPush = (post: PostData) => {
-      switch (post.type) {
+    const showSideItem = () => {
+      switch (post.value.type) {
         case 'user':
-          history.pushState({}, '', `/user/${post.user.uname}/submit?draft=${post.id}`)
-          setSelectMenu(post.user.uname, post.user.image)
-          postType.value = 'user'
+          context.emit('getSideItem', currentUser.value?.uname, 'user')
           break
         case 'community':
-          history.pushState({}, '', `/r/${post.communityId}/submit?draft=${post.id}`)
-          setSelectMenu(post.community!.path, post.community!.mainImage)
-          postType.value = 'community'
-          selectCommunityName.value = post.community!.name
+          context.emit('getSideItem', post.value.communityId, 'community')
           break
         default:
-          history.pushState({}, '', `/submit?draft=${post.id}`)
-          isParameter.value = false
-          postType.value = 'none'
+          context.emit('getSideItem', post.value.communityId, 'none')
           break
       }
-    }
-
-/**
- * NG
- */
-    const getCurrentUserCommunities = async () => {
-      try {
-        const response = await $axios.get('account/communities')
-        communities.value.push(...response.data.communities)
-      } catch (e) {
-
-      }
-    }
-
-    /**
-     * queryで指定されたIDのPostがDraftPosts配列に存在しない場合
-     * 404エラーを返す。
-     */
-    const checkIsQueryDraftPost = () => {
-      const draftPost = draftPosts.value.find(p => {
-        return String(p.id) === route.value.query.draft
-      })
-      if (!draftPost){
-        error({ statusCode: 404 })
-        return
-      }
-      post.value = draftPost
-    }
-
-    /**
-     * statusがdraftのpostを取得する。
-     */
-    const getDraftPosts = async () => {
-      const response = await $axios.get('/account/posts?status=draft')
-      if (!response.data) return
-      draftPosts.value = response.data.posts
-    }
-
-    /**
-     * postIdで指定されたIDのstatusがdraftのpostを取得する。
-     */
-    const selectDraftPosr = async (postId: number) => {
-      if (route.value.query.draft === String(postId)) {
-        draftDialog.value = false
-        return
-      }
-      const response = await $axios.get(`/account/posts/${postId}`)
-      if (!response.data) return
-      post.value = response.data.post
-      draftDialog.value = false
-      draftQuery.value = postId
-      changePostTyprRouterPush(response.data.post)
-      post.value.type === 'user'
-        ? context.emit('getSideItem', currentUser.value?.uname, 'user')
-        : context.emit('getSideItem', post.value.communityId, 'community')
     }
 
     /**
@@ -584,19 +530,104 @@ export default defineComponent({
     }
 
     /**
+     * ParameterでPostのTypeを判定して遷移先を変える。
+     */
+    const changePostTyprRouterPush = (post: PostData) => {
+      switch (post.type) {
+        case 'user':
+          history.pushState({}, '', `/user/${post.user.uname}/submit?draft=${post.id}`)
+          setSelectMenu(post.user.uname, post.user.image)
+          postType.value = 'user'
+          draftQuery.value = post.id
+          break
+        case 'community':
+          history.pushState({}, '', `/r/${post.communityId}/submit?draft=${post.id}`)
+          setSelectMenu(post.community!.path, post.community!.mainImage)
+          selectCommunityName.value = post.community!.name
+          postType.value = 'community'
+          draftQuery.value = post.id
+          break
+        default:
+          history.pushState({}, '', `/submit?draft=${post.id}`)
+          isParameter.value = false
+          postType.value = 'none'
+          draftQuery.value = post.id
+          break
+      }
+    }
+
+    const getCurrentUserCommunities = async () => {
+      try {
+        const response = await $axios.get('account/communities')
+        communities.value.push(...response.data.communities)
+      } catch (e) {
+
+      }
+    }
+
+    /**
+     * URL直打ちqueryで指定されたIDのPostがDraftPosts配列に存在しない場合
+     * 404エラーを返す。
+     */
+    const checkIsQueryDraftPost = () => {
+      const draftPost = draftPosts.value.find(p => {
+        return String(p.id) === route.value.query.draft
+      })
+      if (!draftPost){
+        error({ statusCode: 404 })
+        return
+      }
+      post.value = draftPost
+    }
+
+    /**
+     * postIdで指定されたIDのstatusがdraftのpostを取得する。
+     */
+    const selectDraftPost = async (postId: number) => {
+      if (route.value.query.draft === String(postId)) {
+        draftDialog.value = false
+        return
+      }
+      try {
+        const response = await $axios.get(`/account/posts/${postId}`)
+        if (!response.data) return
+        post.value = response.data.post
+        draftDialog.value = false
+        changePostTyprRouterPush(response.data.post)
+        showSideItem()
+      } catch (e) {
+        flashMessageStore.createFlashMessage({
+          message: '予期せぬエラーが発生しました。',
+          type: 'ERROR'
+        })
+      }
+    }
+
+    /**
      * Postを作成する。
      * parameterがuserだった場合はpostのtypeをuserとして作成。
      */
     const createPost = async () => {
       changePostType()
-      if (post.value.type === 'community') {
-        await $axios.post(`/posts?community_id=${selectCommunityName.value}`, { post: post.value, post_image: post.value.postImage })
-      }  else {
-        await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
+      try {
+        if (post.value.type === 'community') {
+          await $axios.post(`/posts?community_id=${selectCommunityName.value}`, { post: post.value, post_image: post.value.postImage })
+        }  else {
+          await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
+        }
+        router.push('/')
+      } catch (e) {
+        flashMessageStore.createFlashMessage({
+          message: '予期せぬエラーが発生しました。',
+          type: 'ERROR'
+        })
       }
-      router.push('/')
     }
 
+    /**
+     * PostをUpdateします
+     * もしpost.statusがpublicだった場合、
+     */
     const updatePost = async (postPublic: boolean) => {
       changePostType()
       post.value.status = (postPublic) ? 'public' : 'draft'
@@ -610,7 +641,7 @@ export default defineComponent({
         if (!postPublic) {
           const resPost = response.data.post as PostData
           draftPosts.value = draftPosts.value.filter(p => {
-            return p.id !== response.data.post.id
+            return p.id !== resPost.id
           })
           draftPosts.value.push(resPost)
           draftQuery.value = resPost.id
@@ -618,7 +649,10 @@ export default defineComponent({
           router.push('/')
         }
       } catch (e) {
-        post.value.status = 'draft'
+        flashMessageStore.createFlashMessage({
+          message: '予期せぬエラーが発生しました。',
+          type: 'ERROR'
+        })
       }
     }
 
@@ -626,42 +660,66 @@ export default defineComponent({
      * DraftPostを作成する。作成後は作成したPostのIDを持つqueryを付与する。
      */
     const createDraftPost = async () => {
-      let response
       changePostType()
       post.value.status = 'draft'
-      if (post.value.type === 'community') {
-        response = await $axios.post(`/posts?community_id=${selectCommunityName.value}`, { post: post.value, post_image: post.value.postImage })
-      } else {
-        response = await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
+      let response: AxiosResponse<any>
+      try {
+        if (post.value.type === 'community') {
+          response = await $axios.post(`/posts?community_id=${selectCommunityName.value}`, { post: post.value, post_image: post.value.postImage })
+        } else {
+          response = await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
+        }
+        post.value.postImage.url = ''
+        const resPost = response.data.post as PostData
+        draftPosts.value.push(resPost)
+        changePostTyprRouterPush(resPost)
+      } catch (e) {
+        flashMessageStore.createFlashMessage({
+          message: '予期せぬエラーが発生しました。',
+          type: 'ERROR'
+        })
       }
-      const resPost = response.data.post as PostData
-      draftPosts.value.push(resPost)
-      changePostTyprRouterPush(resPost)
-      draftQuery.value = resPost.id
     }
 
+    /**
+     * firebase storage に画像をアップロードして
+     * postImage.urlに画像のURLを代入
+     */
     const imageUpload = async (file: Blob) => {
       try {
         post.value.postImage.url = ''
         post.value.postImage.uid = ''
         post.value.postImage.uid = new Date().getTime().toString() + Math.floor(Math.random() * 10).toString()
         const storageRef = r(storage, `images/${post.value.postImage.uid}`)
-        const task = uploadBytesResumable(storageRef, file)
-        await task
+        await uploadBytesResumable(storageRef, file)
         const url = await getDownloadURL(storageRef)
         post.value.postImage.url = url
       } catch (e) {
+        flashMessageStore.createFlashMessage({
+          message: '画像のアップロードに失敗しました。',
+          type: 'ERROR'
+        })
         post.value.postImage.url = ''
       }
     }
 
+    /**
+     * Rails・firebase storage共に画像を削除する
+     */
     const deleteImage = async () => {
-      await $axios.$delete(`/post_images/${post.value.postImage.uid}`).then(async () => {
-        const storageRef = r(storage, `images/${post.value.postImage.uid}`)
-        await deleteObject(storageRef)
-        post.value.postImage.uid = ''
-        post.value.postImage.url = ''
-      })
+      try {
+        await $axios.$delete(`/post_images/${post.value.postImage.uid}`).then(async () => {
+          const storageRef = r(storage, `images/${post.value.postImage.uid}`)
+          await deleteObject(storageRef)
+          post.value.postImage.uid = ''
+          post.value.postImage.url = ''
+        })
+      } catch (e) {
+        flashMessageStore.createFlashMessage({
+          message: '画像の削除に失敗しました。',
+          type: 'ERROR'
+        })
+      }
     }
 
     return {
@@ -684,7 +742,7 @@ export default defineComponent({
       clickSelectUserItem,
       clickSelectCommunityItem,
       getDraftPosts,
-      selectDraftPosr,
+      selectDraftPost,
       imageMouseOver,
       imageMouseLeave,
       btnclick,
