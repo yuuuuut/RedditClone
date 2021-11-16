@@ -34,7 +34,7 @@
           <v-divider />
           <v-card-text class="draft-post__item">
             <div v-for="p in draftPosts" :key="p.id">
-              <div class="py-1 px-2" @click="selectDraftPosr(p.id)">
+              <div class="py-1 px-2" @click="selectDraftPost(p.id)">
                 <div>{{ p.title }}</div>
                 <div class="d-flex">
                   <div class="draft-post__sub-text">{{ p.user.uname }}</div>
@@ -50,10 +50,9 @@
     </div>
     <v-divider class="divider" />
     <div class="target-select">
-      <v-menu offset-y>
-        <template #activator="{ on, attrs }">
+      <v-menu v-model="selectMenu" offset-y>
+        <template #activator="{ on }">
           <div
-            v-bind="attrs"
             class="target-select__content"
             v-on="on"
           >
@@ -87,18 +86,103 @@
               <div>user/{{ currentUser.uname }}</div>
             </div>
           </div>
-          <div v-if="communities.length" class="select-menu">
-            <div class="select-menu__item-title">my communities</div>
-            <div
-              v-for="c in communities"
-              :key="c.name"
-              class="select-menu__item"
-              @click="clickSelectCommunityItem(c.name, c.mainImage)"
-            >
-              <v-avatar class="mr-3" size="40">
-                <v-img :src="c.mainImage" />
-              </v-avatar>
-              <div>r/{{ c.name }}</div>
+          <div class="select-menu">
+            <div class="d-flex justify-space-between mb-3">
+              <div class="select-menu__item-title">my communities</div>
+              <!-- Create New Community Dialog -->
+              <v-dialog
+                v-model="createCommunityDialog"
+                width="500"
+              >
+                <template #activator="{ on, attrs }">
+                  <div
+                    v-bind="attrs"
+                    class="select-menu__item-create"
+                    v-on="on"
+                    @click="clickCreateNewButton"
+                  >
+                    Create New
+                  </div>
+                </template>
+                <v-card>
+                  <v-card-title class="d-flex justify-space-between">
+                    <div>Create a community</div>
+                    <v-icon @click="createCommunityDialog = false">mdi-close</v-icon>
+                  </v-card-title>
+                  <v-divider></v-divider>
+                  <div class="pa-3">
+                    <div class="mb-10">
+                      <div class="mb-6">
+                        <label>Name</label>
+                        <div class="community-dialog__subtext">Community names including capitalization cannot be changed.</div>
+                      </div>
+                      <v-text-field
+                        v-model="community.name"
+                        outlined
+                        hide-details="auto"
+                        class="community-create__name-input"
+                        prefix="r/"
+                        :maxlength="MAX_COMMUNITY_NAME"
+                      />
+                      <div class="community-dialog__subtext mt-1">{{ communityTextLength }} Characters remaining</div>
+                    </div>
+                    <div>
+                      <div>
+                        <label>Community type</label>
+                      </div>
+                      <v-radio-group  v-model="community.type">
+                        <v-radio
+                          v-for="t in communityTypes"
+                          :key="t.type"
+                          :value="t.type"
+                        >
+                          <template #label>
+                            <div class="d-flex">
+                              <v-icon size="17" class="mx-1">{{ t.icon }}</v-icon>
+                              <div class="community-create__radio-text">{{ t.upperType }}</div>
+                              <div class="community-create__radio-subtext">{{ t.subtext }}</div>
+                            </div>
+                          </template>
+                        </v-radio>
+                      </v-radio-group>
+                    </div>
+                  </div>
+                  <v-divider></v-divider>
+                  <v-card-actions class="grey lighten-2">
+                    <div style="margin-left:auto">
+                      <v-btn
+                        rounded
+                        outlined
+                        color="primary"
+                        class="mr-1"
+                        @click="createCommunityDialog = false"
+                      >
+                        Cancel
+                      </v-btn>
+                      <v-btn
+                        rounded
+                        color="primary"
+                        @click="createCommunity"
+                      >
+                        Create Community
+                      </v-btn>
+                    </div>
+                  </v-card-actions>
+                </v-card>
+              </v-dialog>
+            </div>
+            <div v-if="communities.length">
+              <div
+                v-for="c in communities"
+                :key="c.name"
+                class="select-menu__item"
+                @click="clickSelectCommunityItem(c)"
+              >
+                <v-avatar class="mr-3" size="40">
+                  <v-img :src="c.mainImage" />
+                </v-avatar>
+                <div>r/{{ c.name }}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -239,20 +323,21 @@ import { computed, defineComponent, onMounted, ref, useContext, useRoute, useRou
 import { deleteObject, getDownloadURL, ref as r, uploadBytesResumable } from 'firebase/storage'
 import { AxiosResponse } from 'axios'
 
-import { POST_TYPE, POST_STATUS, USER_SUBMIT_ROUTE, COMMUNITY_SUBMIT_ROUTE } from '~/plugins/const'
+import {  MAX_COMMUNITY_NAME, USER_SUBMIT_ROUTE, COMMUNITY_SUBMIT_ROUTE } from '~/plugins/const'
 import { storage } from "~/plugins/firebase"
 import { $axios } from "~/utils/api"
-import { userStore } from "~/store"
+import { flashMessageStore, userStore } from "~/store"
 
 import { PostData, Post, PostType } from "~/types/post"
 import { Community } from "~/types/community"
 
 export default defineComponent({
-  setup() {
+  setup(_, context) {
     const { error } = useContext()
     const route = useRoute()
     const router = useRouter()
 
+    // vue2-editor set up
     const customToolbar = ref([
       ["bold", "italic", "underline"],
       [{ list: "ordered" }, { list: "bullet" }],
@@ -260,7 +345,8 @@ export default defineComponent({
       ["blockquote", "code-block"],
       ["image"]
     ])
-
+    
+    const selectMenu = ref(false)
     const selectMenuName = ref('')
     const selectMenuImage = ref('')
     const isParameter = ref(false)
@@ -270,6 +356,7 @@ export default defineComponent({
 
     const tab = ref(null)
     const tabs = ref(['POST', 'IMAGE', 'LINK'])
+    const createCommunityDialog = ref(false)
     const draftDialog = ref(false)
     const isImageHover = ref(false)
     const draftPosts = ref<PostData[]>([])
@@ -289,10 +376,22 @@ export default defineComponent({
         url: ''
       }
     })
+    const community = ref({
+      name: '',
+      type: 'public',
+    })
+    const communityTypes = ref([
+      { type: 'public', upperType: 'Public', icon: 'mdi-account', subtext: 'Anyone can view, post, and comment to this community' },
+      { type: 'restricted', upperType: 'Restricted', icon: 'mdi-eye', subtext: 'Anyone can view this community, but only approved users can post' },
+      { type: 'private', upperType: 'Private', icon: 'mdi-lock', subtext: 'Only approved users can view and submit to this community' }
+    ])
 
     /**
      * Computed
      */
+    const communityTextLength = computed(() => {
+      return MAX_COMMUNITY_NAME - community.value.name.length
+    })
     const currentUser = computed(() => {
       return userStore.currentUser
     })
@@ -308,27 +407,33 @@ export default defineComponent({
         setSelectMenu(currentUser.value!.uname, currentUser.value!.image)
         isParameter.value = true
         postType.value = 'user'
+        context.emit('getSideItem', currentUser.value?.uname, 'user')
       }
       if (route.value.name === COMMUNITY_SUBMIT_ROUTE) {
         const community = communities.value.find(c => {
           return route.value.params.name === c.name
         })
         if (!community) return
-        setSelectMenu(community.name, community.mainImage)
+        setSelectMenu(community.path, community.mainImage)
         isParameter.value = true
         postType.value = 'community'
+        context.emit('getSideItem', community.name, 'community')
       }
       if (route.value.query.draft) {
         checkIsQueryDraftPost()
       }
     })
 
-    /**************
+    /**
      * Methods
-     **************/
+     */
     const btnclick = () => {
       const elm = document.getElementById('imageInput') as HTMLElement
       elm.click()
+    }
+    const clickCreateNewButton = () => {
+      createCommunityDialog.value = true
+      selectMenu.value = false
     }
     const imageMouseOver = () => {
       isImageHover.value = true
@@ -337,9 +442,32 @@ export default defineComponent({
       isImageHover.value = false
     }
 
-/**
- * OK
- */
+
+    /**
+     * statusがdraftのpostを取得する。
+     */
+    const getDraftPosts = async () => {
+      const response = await $axios.get('/account/posts?status=draft')
+      if (!response.data) return
+      draftPosts.value = response.data.posts
+    }
+
+    const createCommunity = async () => {
+      try {
+        const response = await $axios.post('/account/communities', { community: community.value })
+        const resCommunity = response.data.community
+        communities.value.push(resCommunity)
+        createCommunityDialog.value = false
+        selectMenu.value = false
+        selectCommunityName.value = resCommunity.name
+        postType.value = 'community'
+        context.emit('getSideItem', resCommunity.name, 'community')
+        setSelectMenu(resCommunity.path, resCommunity.mainImage)
+        history.pushState({}, '', `/r/${resCommunity.name}/submit`)
+      } catch (e) {
+      }
+    }
+
     const clickSelectUserItem = () => {
       if (!currentUser.value) return
       if (draftQuery.value) {
@@ -348,17 +476,19 @@ export default defineComponent({
         history.pushState({}, '', `/user/${currentUser.value.uname}/submit`)
       }
       setSelectMenu(currentUser.value.uname, currentUser.value.image)
+      context.emit('getSideItem', currentUser.value.uname, 'user')
       postType.value = 'user'
     }
 
-    const clickSelectCommunityItem = (name: string, image: string) => {
+    const clickSelectCommunityItem = (community: Community) => {
       if (draftQuery.value) {
-        history.pushState({}, '', `/r/${name}/submit?draft=${draftQuery.value}`)
+        history.pushState({}, '', `/r/${community.name}/submit?draft=${draftQuery.value}`)
       } else {
-        history.pushState({}, '', `/r/${name}/submit`)
+        history.pushState({}, '', `/r/${community.name}/submit`)
       }
-      setSelectMenu(name, image)
-      selectCommunityName.value = name
+      setSelectMenu(community.path, community.mainImage)
+      context.emit('getSideItem', community.name, 'community')
+      selectCommunityName.value = community.name
       postType.value = 'community'
     }
 
@@ -368,33 +498,64 @@ export default defineComponent({
       selectMenuImage.value = image
     }
 
+    const showSideItem = () => {
+      switch (post.value.type) {
+        case 'user':
+          context.emit('getSideItem', currentUser.value?.uname, 'user')
+          break
+        case 'community':
+          context.emit('getSideItem', post.value.communityId, 'community')
+          break
+        default:
+          context.emit('getSideItem', post.value.communityId, 'none')
+          break
+      }
+    }
+
+    /**
+     * ParameterでPostのTypeを判定してセットする。
+     */
+    const changePostType = () => {
+      switch (postType.value) {
+        case 'user':
+          post.value.type = 'user'
+          break
+        case 'community':
+          post.value.type = 'community'
+          break
+        default:
+          post.value.type = 'none'
+          break
+      }
+    }
+
     /**
      * ParameterでPostのTypeを判定して遷移先を変える。
      */
     const changePostTyprRouterPush = (post: PostData) => {
       switch (post.type) {
-        case POST_TYPE.user:
+        case 'user':
           history.pushState({}, '', `/user/${post.user.uname}/submit?draft=${post.id}`)
           setSelectMenu(post.user.uname, post.user.image)
           postType.value = 'user'
+          draftQuery.value = post.id
           break
-        case POST_TYPE.community:
+        case 'community':
           history.pushState({}, '', `/r/${post.communityId}/submit?draft=${post.id}`)
-          setSelectMenu(post.community!.name, post.community!.mainImage)
-          postType.value = 'community'
+          setSelectMenu(post.community!.path, post.community!.mainImage)
           selectCommunityName.value = post.community!.name
+          postType.value = 'community'
+          draftQuery.value = post.id
           break
         default:
           history.pushState({}, '', `/submit?draft=${post.id}`)
           isParameter.value = false
           postType.value = 'none'
+          draftQuery.value = post.id
           break
       }
     }
 
-/**
- * NG
- */
     const getCurrentUserCommunities = async () => {
       try {
         const response = await $axios.get('account/communities')
@@ -405,7 +566,7 @@ export default defineComponent({
     }
 
     /**
-     * queryで指定されたIDのPostがDraftPosts配列に存在しない場合
+     * URL直打ちqueryで指定されたIDのPostがDraftPosts配列に存在しない場合
      * 404エラーを返す。
      */
     const checkIsQueryDraftPost = () => {
@@ -420,44 +581,25 @@ export default defineComponent({
     }
 
     /**
-     * statusがdraftのpostを取得する。
-     */
-    const getDraftPosts = async () => {
-      const response = await $axios.get('/account/posts?status=draft')
-      if (!response.data) return
-      draftPosts.value = response.data.posts
-    }
-
-    /**
      * postIdで指定されたIDのstatusがdraftのpostを取得する。
      */
-    const selectDraftPosr = async (postId: number) => {
+    const selectDraftPost = async (postId: number) => {
       if (route.value.query.draft === String(postId)) {
         draftDialog.value = false
         return
       }
-      const response = await $axios.get(`/account/posts/${postId}`)
-      if (!response.data) return
-      post.value = response.data.post
-      draftDialog.value = false
-      draftQuery.value = postId
-      changePostTyprRouterPush(response.data.post)
-    }
-
-    /**
-     * ParameterでPostのTypeを判定してセットする。
-     */
-    const changePostType = () => {
-      switch (postType.value) {
-        case 'user':
-          post.value.type = POST_TYPE.user
-          break
-        case 'community':
-          post.value.type = POST_TYPE.community
-          break
-        default:
-          post.value.type = POST_TYPE.none
-          break
+      try {
+        const response = await $axios.get(`/account/posts/${postId}`)
+        if (!response.data) return
+        post.value = response.data.post
+        draftDialog.value = false
+        changePostTyprRouterPush(response.data.post)
+        showSideItem()
+      } catch (e) {
+        flashMessageStore.createFlashMessage({
+          message: '予期せぬエラーが発生しました。',
+          type: 'ERROR'
+        })
       }
     }
 
@@ -467,10 +609,25 @@ export default defineComponent({
      */
     const createPost = async () => {
       changePostType()
-      await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
-      router.push('/')
+      try {
+        if (post.value.type === 'community') {
+          await $axios.post(`/posts?community_id=${selectCommunityName.value}`, { post: post.value, post_image: post.value.postImage })
+        }  else {
+          await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
+        }
+        router.push('/')
+      } catch (e) {
+        flashMessageStore.createFlashMessage({
+          message: '予期せぬエラーが発生しました。',
+          type: 'ERROR'
+        })
+      }
     }
 
+    /**
+     * PostをUpdateします
+     * もしpost.statusがpublicだった場合、
+     */
     const updatePost = async (postPublic: boolean) => {
       changePostType()
       post.value.status = (postPublic) ? 'public' : 'draft'
@@ -484,7 +641,7 @@ export default defineComponent({
         if (!postPublic) {
           const resPost = response.data.post as PostData
           draftPosts.value = draftPosts.value.filter(p => {
-            return p.id !== response.data.post.id
+            return p.id !== resPost.id
           })
           draftPosts.value.push(resPost)
           draftQuery.value = resPost.id
@@ -492,7 +649,10 @@ export default defineComponent({
           router.push('/')
         }
       } catch (e) {
-        post.value.status = POST_STATUS.draft
+        flashMessageStore.createFlashMessage({
+          message: '予期せぬエラーが発生しました。',
+          type: 'ERROR'
+        })
       }
     }
 
@@ -500,46 +660,73 @@ export default defineComponent({
      * DraftPostを作成する。作成後は作成したPostのIDを持つqueryを付与する。
      */
     const createDraftPost = async () => {
-      let response
       changePostType()
-      post.value.status = POST_STATUS.draft
-      if (post.value.type === POST_TYPE.community) {
-        response = await $axios.post(`/posts?community_id=${route.value.params.name}`, { post: post.value, post_image: post.value.postImage })
-      } else {
-        response = await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
+      post.value.status = 'draft'
+      let response: AxiosResponse<any>
+      try {
+        if (post.value.type === 'community') {
+          response = await $axios.post(`/posts?community_id=${selectCommunityName.value}`, { post: post.value, post_image: post.value.postImage })
+        } else {
+          response = await $axios.post('/posts', { post: post.value, post_image: post.value.postImage })
+        }
+        post.value.postImage.url = ''
+        const resPost = response.data.post as PostData
+        draftPosts.value.push(resPost)
+        changePostTyprRouterPush(resPost)
+      } catch (e) {
+        flashMessageStore.createFlashMessage({
+          message: '予期せぬエラーが発生しました。',
+          type: 'ERROR'
+        })
       }
-      const resPost = response.data.post as PostData
-      draftPosts.value.push(resPost)
-      changePostTyprRouterPush(resPost)
-      draftQuery.value = resPost.id
     }
 
+    /**
+     * firebase storage に画像をアップロードして
+     * postImage.urlに画像のURLを代入
+     */
     const imageUpload = async (file: Blob) => {
       try {
         post.value.postImage.url = ''
         post.value.postImage.uid = ''
         post.value.postImage.uid = new Date().getTime().toString() + Math.floor(Math.random() * 10).toString()
         const storageRef = r(storage, `images/${post.value.postImage.uid}`)
-        const task = uploadBytesResumable(storageRef, file)
-        await task
+        await uploadBytesResumable(storageRef, file)
         const url = await getDownloadURL(storageRef)
         post.value.postImage.url = url
       } catch (e) {
+        flashMessageStore.createFlashMessage({
+          message: '画像のアップロードに失敗しました。',
+          type: 'ERROR'
+        })
         post.value.postImage.url = ''
       }
     }
 
+    /**
+     * Rails・firebase storage共に画像を削除する
+     */
     const deleteImage = async () => {
-      await $axios.$delete(`/post_images/${post.value.postImage.uid}`).then(async () => {
-        const storageRef = r(storage, `images/${post.value.postImage.uid}`)
-        await deleteObject(storageRef)
-        post.value.postImage.uid = ''
-        post.value.postImage.url = ''
-      })
+      try {
+        await $axios.$delete(`/post_images/${post.value.postImage.uid}`).then(async () => {
+          const storageRef = r(storage, `images/${post.value.postImage.uid}`)
+          await deleteObject(storageRef)
+          post.value.postImage.uid = ''
+          post.value.postImage.url = ''
+        })
+      } catch (e) {
+        flashMessageStore.createFlashMessage({
+          message: '画像の削除に失敗しました。',
+          type: 'ERROR'
+        })
+      }
     }
 
     return {
+      selectMenu,
+      clickCreateNewButton,
       selectMenuName,
+      createCommunityDialog,
       selectMenuImage,
       tab,
       tabs,
@@ -555,7 +742,7 @@ export default defineComponent({
       clickSelectUserItem,
       clickSelectCommunityItem,
       getDraftPosts,
-      selectDraftPosr,
+      selectDraftPost,
       imageMouseOver,
       imageMouseLeave,
       btnclick,
@@ -565,7 +752,12 @@ export default defineComponent({
       imageUpload,
       deleteImage,
       VueEditor,
-      customToolbar
+      customToolbar,
+      community,
+      createCommunity,
+      communityTypes,
+      MAX_COMMUNITY_NAME,
+      communityTextLength
     }
   }
 })
@@ -579,6 +771,14 @@ export default defineComponent({
   max-height: 300px;
 }
 
+.v-input--selection-controls {
+  margin-top: 8px;
+}
+
+::v-deep .v-input--selection-controls__input {
+  margin-right: 0 !important;
+}
+
 ::v-deep .v-dialog {
   transition: initial !important;
 }
@@ -589,7 +789,7 @@ export default defineComponent({
 }
 
 .form {
-  max-width: 90%;
+  max-width: 97%;
   margin-top: 20px;
 
   .divider {
@@ -644,9 +844,13 @@ export default defineComponent({
 }
 
 .select-menu__item-title {
-  font-size: 14px;
+  font-size: 12px;
   color: gray;
-  margin-bottom: 10px;
+}
+
+.select-menu__item-create {
+  font-size: 15px;
+  color: rgb(16, 124, 248);
 }
 
 .select-menu__item {
@@ -681,4 +885,26 @@ export default defineComponent({
     }
   }
 }
+
+/** Community Create Dialog */
+label {
+  font-size: 17px;
+}
+
+.community-create__radio-text {
+  margin-right: 4px;
+  color: black;
+  font-size: 14px;
+}
+
+.community-dialog__subtext {
+  font-size: 12px;
+  color: #797b7c;
+}
+
+.community-create__radio-subtext {
+  font-size: 12px;
+  color: #797b7c;
+}
+
 </style>

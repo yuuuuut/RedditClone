@@ -4,5 +4,6 @@ export interface Community {
   description: string
   mainImage: string
   headerImage: string
+  path: string
   isJoin: boolean
 }

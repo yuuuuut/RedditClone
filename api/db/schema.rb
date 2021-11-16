@@ -10,17 +10,29 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_10_22_103752) do
+ActiveRecord::Schema.define(version: 2021_10_27_101748) do
 
   create_table "communities", primary_key: "name", id: :string, charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.text "description"
     t.string "main_image"
     t.string "header_image"
-    t.string "color"
+    t.integer "type", default: 0
+    t.integer "color", default: 0
+    t.integer "header_height", default: 0
     t.integer "limitation", default: 0
+    t.string "path"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.index ["limitation"], name: "index_communities_on_limitation"
+  end
+
+  create_table "community_moderators", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "moderator_id"
+    t.string "community_id"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["community_id"], name: "index_community_moderators_on_community_id"
+    t.index ["moderator_id", "community_id"], name: "index_community_moderators_on_moderator_id_and_community_id", unique: true
   end
 
   create_table "post_images", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -85,4 +97,5 @@ ActiveRecord::Schema.define(version: 2021_10_22_103752) do
     t.index ["uname"], name: "index_users_on_uname", unique: true
   end
 
+  add_foreign_key "community_moderators", "users", column: "moderator_id"
 end

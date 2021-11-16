@@ -2,7 +2,7 @@
   <div class="mb-7">
     <div class="name">Trending today</div>
     <div class="d-flex justify-space-between">
-      <div v-for="community in communities" :key="community.id" class="post-image__wrap">
+      <div v-for="community in communities" :key="community.name" class="post-image__wrap">
         <NuxtLink :to="`/r/${community.name}`">
           <v-img :src="community.mainImage" class="post-image" />
           <div class="post-image__name">
@@ -29,18 +29,13 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, reactive, ref } from "@vue/composition-api"
+import { defineComponent, onMounted, ref } from "@vue/composition-api"
+import { Community } from "~/types/community"
 import { $axios } from "~/utils/api"
 
 export default defineComponent({
   setup() {
-    const communities = ref([])
-    // const communities = reactive([
-    //   { image: "/image/sample.jpeg", name: "Covid", describe: "あああああああああああああああああああああああああああああ" },
-    //   { image: "/image/sample.jpeg", name: "Covid", describe: "あああああああああああああああああああああああああああああ" },
-    //   { image: "/image/sample.jpeg", name: "Covid", describe: "あああああああああああああああああああああああああああああ" },
-    //   { image: "/image/sample.jpeg", name: "Covid", describe: "あああああああああああああああああああああああああああああ" }
-    // ])
+    const communities = ref<Community[]>([])
 
     onMounted(async () => {
       await a()
@@ -71,11 +66,11 @@ export default defineComponent({
   position: relative;
   background: #000;
   border-radius: 10px;
-  width: 238px;
+  width: 260px;
   cursor: pointer;
 
   .post-image {
-    width: 238px;
+    width: 260px;
     height: 178px;
     border-radius: 10px;
     display: block;
@@ -100,6 +95,8 @@ export default defineComponent({
     top: 60%;
     padding-left: 10px;
     padding-right: 10px;
+    height: 40px;
+    overflow: hidden;
     z-index: 9999;
   }
 
