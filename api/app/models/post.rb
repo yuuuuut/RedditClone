@@ -8,6 +8,8 @@ class Post < ApplicationRecord
   enum status: { draft: 0, public: 1 }, _prefix: true
   enum type: { none: 0, user: 1, community: 2 }, _prefix: true
 
+  scope :post_includes, -> { includes(:user, :community, :post_image) }
+
   def self.sort(sort_type)
     return order(created_at: "DESC") if sort_type == 'new'
     return order(created_at: "ASC") if sort_type == 'top'
