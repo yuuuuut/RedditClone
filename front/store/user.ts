@@ -11,6 +11,7 @@ export interface UserType {
   image: string
   email: string
   name: string
+  headerImage: string
   isFirstLogin: boolean
 }
 

@@ -7,7 +7,7 @@
       <v-col cols="4" class="mt-16">
         <div v-if="item">
           <div v-if="sideItemType === 'user'">
-            <PostFormUserSlideItem :item="item" />
+            <PostFormUserSlideItem :item="item" :is-show-create-btn="false" />
           </div>
           <div v-if="sideItemType === 'community'">
             <PostFormCoomunitySlideItem :item="item" />

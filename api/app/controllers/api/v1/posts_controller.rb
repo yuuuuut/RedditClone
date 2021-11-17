@@ -4,7 +4,7 @@ class Api::V1::PostsController < Api::V1::ApplicationController
   include Pagination
 
   def index
-    @posts = Post.all.page(params[:page]).per(3)
+    @posts = Post.sort(params[:sort]).page(params[:page]).per(10)
     @pagination = resources_with_pagination(@posts)
   end
 

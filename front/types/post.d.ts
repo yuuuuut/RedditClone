@@ -1,6 +1,7 @@
 import { Community } from "./community"
 import { UserPost } from "./user"
 
+export type Paths = 'root' | 'hot' | 'new' | 'top'
 export type PostType = 'none' | 'user' | 'community'
 export type PostStatus = 'draft' | 'public'
 

@@ -23,6 +23,7 @@ Rails.application.routes.draw do
         end
       end
 
+      resources :users
       resources :posts
       resources :post_images
       resources :communities
