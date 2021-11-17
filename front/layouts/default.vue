@@ -2,7 +2,7 @@
   <v-app>
     <v-app-bar color="white" height="48" app>
       <v-toolbar-title>
-        <div @click="a">
+        <div @click="clickLogo">
           Reddit Clone
         </div>
       </v-toolbar-title>
@@ -186,8 +186,8 @@
         </v-card>
       </v-dialog>
     </v-app-bar>
-    <v-main ref="r" class="main">
-      <Nuxt />
+    <v-main class="main">
+      <Nuxt ref="r" />
     </v-main>
     <FlashMessage />
   </v-app>
@@ -212,7 +212,7 @@ export default defineComponent({
     const router = useRouter()
     const pattern = /^[0-9a-zA-Z]*$/
 
-    const r = ref(null)
+    const r = ref<any>(null)
 
     const on = ref<any>(null)
     const attrs = ref<any>(null)
@@ -270,20 +270,20 @@ export default defineComponent({
       router.push('/')
     }
 
-    const a = () => {
-        const isRootRoute = route.value.path === '/' ||
-                            route.value.path === '/hot' ||
-                            route.value.path === '/new' ||
-                            route.value.path === '/top'
+    const clickLogo = () => {
+      const isRootRoute = route.value.path === '/' ||
+                          route.value.path === '/hot' ||
+                          route.value.path === '/new' ||
+                          route.value.path === '/top'
       if (r.value) {
         (isRootRoute)
-          ? r.value.$children[0].$children[0].$children[0].$children[1].pushRouter('root')
+          ? r.value.$children[0].$children[0].$children[1].clickFunc('root')
           : router.push('/')
       }
     }
 
     return {
-      a,
+      clickLogo,
       r,
       on,
       attrs,
