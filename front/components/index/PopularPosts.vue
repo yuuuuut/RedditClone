@@ -3,7 +3,7 @@
     <div class="main">
       <PostHeader :current-select="currentSelect" :click-func="pushRouter" />
       <div v-for="post in posts" :key="post.id" class="mb-3">
-        <Post :post="post" />
+        <Post :key="r" :post="post" />
       </div>
     </div>
   </v-col>
@@ -11,19 +11,13 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, onUnmounted, PropType, ref, useRoute } from '@nuxtjs/composition-api'
+import { defineComponent, onMounted, onUnmounted, ref, useRoute } from '@nuxtjs/composition-api'
 import { Pagination } from '~/types/pagination'
 import { Paths, PostData } from '~/types/post'
 import { $axios } from '~/utils/api'
 
 export default defineComponent({
-  props: {
-    clickType: {
-      type: String as PropType<'ROOT' | 'USER'>,
-      required: true
-    },
-  },
-  setup(props) {
+  setup() {  
     const root = ref<HTMLElement | null>(null)
     const route = useRoute()
 
@@ -39,18 +33,15 @@ export default defineComponent({
     })
 
     const pushRouter = (path: Paths) => {
-      if (props.clickType === 'ROOT') {
-        (path === 'root')
-          ? history.pushState({}, '', `/`)
-          : history.pushState({}, '', `/${path}`)
-        currentSelect.value = path
-      } else {
-        history.pushState({}, '', route.value.path + `?sort=${path}`)
-        currentSelect.value = path
-      }
+      (path === 'root')
+        ? history.pushState({}, '', `/`)
+        : history.pushState({}, '', `/${path}`)
+      currentSelect.value = path
     }
 
     onMounted(async () => {
+      window.addEventListener("scroll", handleScroll)
+
       if (route.value.path === '/' || route.value.path === '/hot') {
         currentSelect.value = 'hot'
       }
@@ -60,7 +51,7 @@ export default defineComponent({
       if (route.value.path === '/top') {
         currentSelect.value = 'top'
       }
-      window.addEventListener("scroll", handleScroll)
+
       const response = await $axios.get('/posts')
       posts.value.push(...response.data.posts)
     })

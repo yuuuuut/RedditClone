@@ -70,7 +70,7 @@ export default defineComponent({
   padding-top: 5px;
   padding-right: 3px;
   padding-left: 3px;
-  z-index: 999;
+  z-index: 10;
 }
 
 .side-item__title {

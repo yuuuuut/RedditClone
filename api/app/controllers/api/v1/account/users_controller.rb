@@ -1,8 +1,12 @@
 class Api::V1::Account::UsersController < Api::V1::ApplicationController
   before_action :authenticate_user!
 
+  include Pagination
+
   def show
     @user = User.find_by(uname: params[:id], uname: current_user.uname)
+    @posts = Post.sort(params[:sort]).where(user: @user).page(params[:page]).per(10)
+    @pagination = resources_with_pagination(@posts)
   end
 
   def update_uname
