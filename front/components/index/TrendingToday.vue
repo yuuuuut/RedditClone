@@ -19,7 +19,7 @@
               <v-img src="https://firebasestorage.googleapis.com/v0/b/redditclone-16a84.appspot.com/o/images%2F16349048489070?alt=media&token=5ed7d2a8-6dda-430f-8c62-9ba7ca166b3b" />
             </v-avatar>
             <div class="post-image__community-name">
-              r/news and more
+              {{ community.path }} and more
             </div>
           </div>
         </NuxtLink>

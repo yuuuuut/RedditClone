@@ -16,7 +16,7 @@ Rails.application.routes.draw do
         end
         resources :posts
         resources :communities do
-          collection do
+          member do
             post '/join', action: :join
             delete '/leave', action: :leave
           end
